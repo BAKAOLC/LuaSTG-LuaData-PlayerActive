@@ -5,9 +5,11 @@
 ----------------------------------------
 --加载资源
 
-LoadPS('player_death_ef','THlib\\player\\player_death_ef.psi','parimg1')
-LoadPS('graze','THlib\\player\\graze.psi','parimg6')
-LoadImageFromFile('player_spell_mask','THlib\\player\\spellmask.png')
+--LoadPS('player_death_ef','THlib\\player\\player_death_ef.psi','parimg1')
+--LoadPS('graze','THlib\\player\\graze.psi','parimg6')
+--LoadImageFromFile('player_spell_mask','THlib\\player\\spellmask.png')
+
+--lstg.var.psychic
 
 ----------------------------------------
 --player class
@@ -23,7 +25,7 @@ function player_class:init()
 	self.supporty=self.y
 	self.hspeed=4
 	self.lspeed=2
-	self.collect_line=96
+	self.collect_line=256--失礼了。收点线？不存在的--默认96
 	self.slow=0
 	self.layer=LAYER_PLAYER
 	self.lr=1
@@ -45,11 +47,6 @@ function player_class:init()
 	self.sp={}
 	self.time_stop=false
 	
-	RunSystem("on_player_init",self)
-	
-	--自机活使用变量
-	self.collect_line=256--失礼了。收点线？不存在的
-	
 	self.checkF=10--决死时间
 	self.collectR1=24--高速收点半径
 	self.collectR2=192--低速收点半径
@@ -63,182 +60,23 @@ function player_class:init()
 	self._lh2=0--过渡变量
 	self._collectRA=0--收点圈透明度
 	self._breaktimes=0--连续miss次数
-	----------------
 	
-	--ex+坑爹输入系统
-	--存下按键状态
-	self._temp_key=nil
-	self._temp_keyp=nil
+	RunSystem("on_player_init",self)
 	
 	self._wisys = PlayerWalkImageSystem(self, 8)--by OLC，自机行走图系统
 end
 
 function player_class:frame()
-	player_class.keystart(self)
-	
-	player_class.framefunc(self)
-	
-	player_class.keyend(self)
-end
-
-function player_class:oldframefunc()
 	self.grazer.world=self.world
-	--find target
-	if ((not IsValid(self.target)) or (not self.target.colli)) then player_class.findtarget(self) end
-	if not KeyIsDown'shoot' then self.target=nil end
-	--all op
-	local dx=0
-	local dy=0
-	local v=self.hspeed
-	if (self.death==0 or self.death>90) and (not self.lock) and not(self.time_stop) then
-		--slow
-		if KeyIsDown'slow' then self.slow=1 else self.slow=0 end
-		--shoot and spell
-		if not self.dialog then
-			if KeyIsDown'shoot' and self.nextshoot<=0 then self.class.shoot(self) end
-			if KeyIsDown'spell' and self.nextspell<=0 and lstg.var.bomb>0 and not lstg.var.block_spell then
-				item.PlayerSpell()
-				lstg.var.bomb=lstg.var.bomb-1
-				self.class.spell(self)
-				self.death=0
-				self.nextcollect=90
-			end
-		else self.nextshoot=15 self.nextspell=30
-		end
-		--move
-		if self.death==0 and not self.lock then
-		if self.slowlock then self.slow=1 end
-		if self.slow==1 then v=self.lspeed end
-		if KeyIsDown'up' then dy=dy+1 end
-		if KeyIsDown'down' then dy=dy-1 end
-		if KeyIsDown'left' then dx=dx-1 end
-		if KeyIsDown'right' then dx=dx+1 end
-		if dx*dy~=0 then v=v*SQRT2_2 end
-		self.x=self.x+v*dx
-		self.y=self.y+v*dy
-		
-		for i=1,#jstg.worlds do
-			if IsInWorld(self.world,jstg.worlds[i].world) then
-				self.x=math.max(math.min(self.x,jstg.worlds[i].pr-8),jstg.worlds[i].pl+8)
-				self.y=math.max(math.min(self.y,jstg.worlds[i].pt-32),jstg.worlds[i].pb+16)
-			end
-		end
-		
-		end
-		--fire
-		if KeyIsDown'shoot' and not self.dialog then self.fire=self.fire+0.16 else self.fire=self.fire-0.16 end
-		if self.fire<0 then self.fire=0 end
-		if self.fire>1 then self.fire=1 end
-		--item
-		 if self.y>self.collect_line then
-			for i,o in ObjList(GROUP_ITEM) do 
-				local flag=false
-				if o.attract<8 then
-					flag=true			
-				elseif o.attract==8 and o.target~=self then
-					if (not o.target) or o.target.y<self.y then
-						flag=true
-					end
-				end
-				if flag then
-					o.attract=8 o.num=self.item 
-					o.target=self
-				end
-			end
-		 else
-			if KeyIsDown'slow' then
-				for i,o in ObjList(GROUP_ITEM) do
-					if Dist(self,o)<48 then
-						if o.attract<3 then
-							o.attract=max(o.attract,3) 
-							o.target=self
-						end	
-					end
-				end
-			else
-				for i,o in ObjList(GROUP_ITEM) do
-					if Dist(self,o)<24 then 
-						if o.attract<3 then
-							o.attract=max(o.attract,3) 
-							o.target=self
-						end	
-					end
-				end
-			end
-		end
-	elseif self.death==90 then
-		if self.time_stop then self.death=self.death-1 end
-		item.PlayerMiss(self)
-		self.deathee={}
-		self.deathee[1]=New(deatheff,self.x,self.y,'first')
-		self.deathee[2]=New(deatheff,self.x,self.y,'second')
-		New(player_death_ef,self.x,self.y)
-	elseif self.death==84 then
-		if self.time_stop then self.death=self.death-1 end
-		self.hide=true
-		self.support=int(lstg.var.power/100)
-	elseif self.death==50 then
-		if self.time_stop then self.death=self.death-1 end
-		self.x=0
-		self.supportx=0
-		self.y=-236
-		self.supporty=-236
-		self.hide=false
-		New(bullet_deleter,self.x,self.y)
-	elseif self.death<50 and not(self.lock) and not(self.time_stop) then
-		self.y=-176-1.2*self.death
+	local _temp_key=nil
+	local _temp_keyp=nil
+	if self.key then
+		_temp_key=KeyState
+		_temp_keyp=KeyStatePre
+		KeyState=self.key
+		KeyStatePre=self.keypre
 	end
-	--img
-	---加上time_stop的限制来实现图像时停
-	if not(self.time_stop) then
-		self._wisys:frame(dx)--by OLC，自机行走图系统
-		
-		self.lh=self.lh+(self.slow-0.5)*0.3
-		if self.lh<0 then self.lh=0 end
-		if self.lh>1 then self.lh=1 end
-		
-		if self.nextshoot>0 then self.nextshoot=self.nextshoot-1 end
-		if self.nextspell>0 then self.nextspell=self.nextspell-1 end
-		
-		if self.support>int(lstg.var.power/100) then self.support=self.support-0.0625
-		elseif self.support<int(lstg.var.power/100) then self.support=self.support+0.0625 end
-		if abs(self.support-int(lstg.var.power/100))<0.0625 then self.support=int(lstg.var.power/100) end
-		
-		self.supportx=self.x+(self.supportx-self.x)*0.6875
-		self.supporty=self.y+(self.supporty-self.y)*0.6875
-		
-		if self.protect>0 then self.protect=self.protect-1 end
-		if self.death>0 then self.death=self.death-1 end
-		
-		lstg.var.pointrate=item.PointRateFunc(lstg.var)
-		--update supports
-		if self.slist then
-			self.sp={}
-			if self.support==5 then
-				for i=1,4 do self.sp[i]=MixTable(self.lh,self.slist[6][i]) self.sp[i][3]=1 end
-			else
-				local s=int(self.support)+1
-				local t=self.support-int(self.support)
-				for i=1,4 do
-					if self.slist[s][i] and self.slist[s+1][i] then
-						self.sp[i]=MixTable(t,MixTable(self.lh,self.slist[s][i]),MixTable(self.lh,self.slist[s+1][i]))
-						self.sp[i][3]=1
-					elseif self.slist[s+1][i] then
-						self.sp[i]=MixTable(self.lh,self.slist[s+1][i])
-						self.sp[i][3]=t
-					end
-				end
-			end
-		end
-	end
-	--time_stop
-	if self.time_stop then self.timer=self.timer-1 end
 	
-	RunSystem("on_player_frame",self)
-end
-
-function player_class:framefunc()--自机活使用
-	self.grazer.world=self.world
 	--find target
 	if ((not IsValid(self.target)) or (not self.target.colli)) then player_class.findtarget(self) end
 	if not KeyIsDown'shoot' then self.target=nil end
@@ -397,49 +235,23 @@ function player_class:framefunc()--自机活使用
 	if self.time_stop then self.timer=self.timer-1 end
 	
 	RunSystem("on_player_frame",self)
-end
-
-function player_class:keystart()
+	
 	if self.key then
-		self._temp_key=KeyState
-		self._temp_keyp=KeyStatePre
-		KeyState=self.key
-		KeyStatePre=self.keypre
-	end
-end
-
-function player_class:keyend()
-	if self.key then
-		KeyState=self._temp_key
-		KeyStatePre=self._temp_keyp
+		KeyState=_temp_key
+		KeyStatePre=_temp_keyp
 	end
 end
 
 function player_class:render()
-	self._wisys:render()--by OLC，自机行走图系统
-	
-	player_class.rendertest(self)--自机活使用
-end
-
-function player_class:rendertest()--自机活使用
 	for i=1,16 do SetImageState('bossring1'..i,'mul+add',Color(self._collectRA*128,255,255,255)) end
 	misc.RenderRing('bossring1',self.x,self.y,self._collectR,self._collectR+8,self.ani*3,32,16)
+	self._wisys:render()--by OLC，自机行走图系统
 	
 	SetFontState('menu','',Color(0xFFFFFFFF))
 	RenderText('menu',string.format('%.2ffps',lstg.var.psychic),0,0,0.25,'center')
 end
 
-function player_class:oldcolli(other)
-	if self.death==0 and not self.dialog and not cheat then
-		if self.protect==0 then
-			PlaySound('pldead00',0.5)
-			self.death=100
-		end
-		if other.group==GROUP_ENEMY_BULLET then Del(other) end
-	end
-end
-
-function player_class:colli(other)--自机活使用
+function player_class:colli(other)
 	if self.death==0 and not self.dialog and not cheat then
 		if self.protect==0 then
 			PlaySound('pldead00',0.5)
@@ -493,6 +305,7 @@ function grazer:init(player)
 	self.layer=LAYER_ENEMY_BULLET_EF+50
 	self.group=GROUP_PLAYER
 	self.player=player or lstg.player
+	--self.player=lstg.player
 	self.grazed=false
 	self.img='graze'
 	ParticleStop(self)
@@ -706,6 +519,6 @@ function AddPlayerToPlayerList(displayname,classname,replayname,pos,_replace)
 	end
 end
 
-Include'THlib\\player\\reimu\\reimu.lua'
-Include'THlib\\player\\marisa\\marisa.lua'
-Include'THlib\\player\\sakuya\\sakuya.lua'
+DoFile('THlib\\player\\reimu\\reimu.lua')
+DoFile('THlib\\player\\marisa\\marisa.lua')
+DoFile('THlib\\player\\sakuya\\sakuya.lua')

@@ -9,6 +9,7 @@ LoadTexture('bonus3','THlib\\item\\item.png')
 lstg.var.collectingitem=0
 
 item=Class(object)
+
 function item:init(x,y,t,v,angle)
 	x=min(max(x,lstg.world.l+8),lstg.world.r-8)
 	self.x=x
@@ -25,11 +26,7 @@ function item:init(x,y,t,v,angle)
 	self.attract=0
 end
 function item:render()
-	if self.y>lstg.world.t then
-		Render(self.imgup,self.x,lstg.world.t-8)
-	else
-		object.render(self)
-	end
+	if self.y>lstg.world.t then Render(self.imgup,self.x,lstg.world.t-8) else object.render(self) end
 end
 function item:frame()
 	local player=self.target
@@ -66,16 +63,6 @@ function GetPower(v)
 	if lstg.var.power>=400 then
 		lstg.var.score=lstg.var.score+v*100
 	end
---    if lstg.var.power==500 then
---        for i,o in ObjList(GROUP_ITEM) do
---            if o.class==item_power or o.class==item_power_large then
---                o.class=item_faith
---                o.img='item5'
---                o.imgup='item_up5'
---                New(bubble,'parimg12',o.x,o.y,16,0.5,1,Color(0xFF00FF00),Color(0x0000FF00),LAYER_ITEM+50)
---            end
---        end
---    end
 end
 
 function Getlife(v)
@@ -138,7 +125,6 @@ end
 function item_chip:collect()
 	Getlife(20)
 end
-
 ----------------------------
 item_bombchip=Class(item)
 function item_bombchip:init(x,y)
@@ -147,7 +133,6 @@ end
 function item_bombchip:collect()
 	Getbomb(20)
 end
-
 item_bomb=Class(item)
 function item_bomb:init(x,y)
 	item.init(self,x,y,10)
@@ -156,23 +141,13 @@ function item_bomb:collect()
 	lstg.var.bomb=lstg.var.bomb+1
 	PlaySound('cardget',0.8)
 end
-
 ----------------------------
 item_faith=Class(item)
 function item_faith:init(x,y)
 	item.init(self,x,y,5)
 end
 function item_faith:collect()
-	--if self.attract>=8 then
-	--	lstg.var.collectitem[self.num]=lstg.var.collectitem[self.num]+1
-	--	if player.nextcollect>0 and player.nextcollect<15 and self.collected and player.itemed then player.nextcollect=15 end
-	--end
-	--local var=lstg.var
 	Getbomb(0.6)
-	--var.itembar[2]=var.itembar[2]+1
---    New(float_text,'item','10000',self.x,self.y+6,0.75,90,60,0.5,0.5,Color(0x8000C000),Color(0x0000C000))
---    var.faith=var.faith+4
---    var.score=var.score+10000
 end
 
 item_faith_minor=Class(object)
@@ -220,13 +195,11 @@ function item_faith_minor:frame()
 		Del(self)
 	end
 end
+item_faith_minor.colli=item.colli
 function item_faith_minor:collect()
 	local var=lstg.var
 	var.faith=var.faith+4
 	var.score=var.score+500
-end
-function item_faith_minor:colli(other)
-	item.colli(self,other)
 end
 
 item_point=Class(item)
@@ -265,6 +238,7 @@ function item.DropItem(x,y,drop)
 	local n=m+drop[2]+drop[3]
 	if n<1 then return end
 	local r=sqrt(n-1)*5
+	--if lstg.var.power==500 then drop[2]=drop[2]+drop[1] drop[1]=0 end
 	if drop[1] >= 400 then
 		local r2=sqrt(ran:Float(1,4))*r
 		local a=ran:Float(0,360)
@@ -298,22 +272,14 @@ end
 item.sc_bonus_max=2000000
 item.sc_bonus_base=1000000
 
+--来自editor
+
 function item:StartChipBonus()
 	self.chip_bonus=true
 	self.bombchip_bonus=true
 end
 
-function item:oldEndChipBonus(x,y)
-	if self.chip_bonus and self.bombchip_bonus then
-			New(item_chip,x-20,y)
-			New(item_bombchip,x+20,y)
-	else
-		if self.chip_bonus then New(item_chip,x,y) end
-		if self.bombchip_bonus then New(item_bombchip,x,y) end
-	end
-end
-
-function item:EndChipBonus(x,y)--自机活使用
+function item:EndChipBonus(x,y)
 	if false then--boss不掉碎片了（
 	if self.chip_bonus and self.bombchip_bonus then
 			New(item_chip,x-20,y)
@@ -325,62 +291,29 @@ function item:EndChipBonus(x,y)--自机活使用
 	end
 end
 
+function item.PlayerInit()
+	lstg.var.power=400
+	lstg.var.lifeleft=0
+	lstg.var.bomb=0
+	lstg.var.bonusflag=0
+	lstg.var.chip=0
+	lstg.var.faith=0
+	lstg.var.graze=0
+	lstg.var.score=0
+	lstg.var.bombchip=0
+	lstg.var.coun_num=0
+	lstg.var.pointrate=item.PointRateFunc(lstg.var)
+	lstg.var.collectitem={0,0,0,0,0,0}
+	lstg.var.itembar={0,0,0}
+	lstg.var.block_spell=false
+	lstg.var.chip_bonus=false
+	lstg.var.bombchip_bonus=false
+	lstg.var.init_player_data=true
+	
+	lstg.var.psychic=0
+end
 ------------------------------------------
-function item.oldPlayerInit()
-	lstg.var.power=100
-	lstg.var.lifeleft=2
-	lstg.var.bomb=2
-	lstg.var.bonusflag=0
-	lstg.var.chip=0
-	lstg.var.faith=0
-	lstg.var.graze=0
-	lstg.var.score=0
-	lstg.var.bombchip=0
-	lstg.var.coun_num=0
-	lstg.var.pointrate=item.PointRateFunc(lstg.var)
-	lstg.var.collectitem={0,0,0,0,0,0}
-	lstg.var.itembar={0,0,0}
-	lstg.var.block_spell=false
-	lstg.var.chip_bonus=false
-	lstg.var.bombchip_bonus=false
-	lstg.var.init_player_data=true
-end
-
-function item.PlayerInit()--自机活使用
-	lstg.var.power=400
-	lstg.var.lifeleft=0
-	lstg.var.bomb=0
-	lstg.var.bonusflag=0
-	lstg.var.chip=0
-	lstg.var.faith=0
-	lstg.var.graze=0
-	lstg.var.score=0
-	lstg.var.bombchip=0
-	lstg.var.coun_num=0
-	lstg.var.pointrate=item.PointRateFunc(lstg.var)
-	lstg.var.collectitem={0,0,0,0,0,0}
-	lstg.var.itembar={0,0,0}
-	lstg.var.block_spell=false
-	lstg.var.chip_bonus=false
-	lstg.var.bombchip_bonus=false
-	lstg.var.init_player_data=true
-	
-	lstg.var.psychic=0
-end
-
-function item.oldPlayerReinit()
-	lstg.var.power=400
-	lstg.var.lifeleft=2
-	lstg.var.chip=0
-	lstg.var.bomb=2
-	lstg.var.bomb_chip=0
-	lstg.var.block_spell=false
-	lstg.var.init_player_data=true
-	lstg.var.coun_num=min(9,lstg.var.coun_num+1)
-	lstg.var.score=lstg.var.coun_num
-end
-
-function item.PlayerReinit()--自机活使用
+function item.PlayerReinit()
 	lstg.var.power=400
 	lstg.var.lifeleft=0
 	lstg.var.chip=0
@@ -393,7 +326,6 @@ function item.PlayerReinit()--自机活使用
 	
 	lstg.var.psychic=0
 end
-
 ------------------------------------------
 --HZC的收点系统
 function item.playercollect(n)
@@ -469,37 +401,11 @@ function item.playercollect(n)
 	end)
 
 end
-
 -----------------------------
 function item:PlayerMiss()
-	lstg.var.chip_bonus=false
-	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
-	ex.ClearBonus(true,false)
 	self.protect=360
 	lstg.var.lifeleft=lstg.var.lifeleft-1
 	lstg.var.bomb=max(lstg.var.bomb,2)
-end
-
-function item.PlayerSpell()
-	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
-	ex.ClearBonus(false,true)
-	lstg.var.bombchip_bonus=false
-end
-
-function item.PlayerGraze()
-	lstg.var.graze=lstg.var.graze+1
-end
-
-function item.PointRateFunc(var)
-	local r=10000+int(var.graze/10)*10+int(lstg.var.faith/10)*10
-	return r
-end
-
-------------------------------------------
---自机活使用
-function item:PlayerDeath()
-	self.protect=360
-	lstg.var.lifeleft=lstg.var.lifeleft-1
 end
 
 function item:PlayerBreak()
@@ -516,7 +422,7 @@ function item:PlayerBreak()
 	else
 		--灵力不足
 		lstg.var.psychic=0
-		item.PlayerDeath(self)
+		item.PlayerMiss(self)
 	end
 end
 
@@ -524,4 +430,20 @@ function item:PlayerPsy()
 	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
 	ex.ClearBonus(false,true)
 	lstg.var.psychic=lstg.var.psychic-self.psyuse--灵击消耗
+end
+
+function item.PlayerSpell()
+	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
+	ex.ClearBonus(false,true)
+	lstg.var.bombchip_bonus=false
+	lstg.var.bomb=lstg.var.bomb-1
+end
+
+function item.PlayerGraze()
+	lstg.var.graze=lstg.var.graze+1
+end
+
+function item.PointRateFunc(var)
+	local r=10000+int(var.graze/10)*10+int(lstg.var.faith/10)*10
+	return r
 end

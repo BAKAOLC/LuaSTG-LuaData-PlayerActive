@@ -496,7 +496,7 @@ function _drop_item(itemclass, num, x, y)
 	switch[itemclass]()
 end
 
-function _init_item(self)--用于关卡开始时重置各个系统参数
+function old_init_item(self)--用于关卡开始时重置各个系统参数
 	if lstg.var.is_practice then
 		item.PlayerInit()
 		if self.item_init then
@@ -510,6 +510,36 @@ function _init_item(self)--用于关卡开始时重置各个系统参数
 			if self.group.item_init then
 				for k,v in pairs(self.group.item_init) do
 					lstg.var[k]=v
+				end
+			end
+		end
+	end
+end
+
+function _init_item(self)--自机活使用
+	if lstg.var.is_practice then
+		item.PlayerInit()
+		if self.item_init then
+			for k,v in pairs(self.item_init) do
+					--lstg.var[k]=v
+					if k=='lifeleft' then
+						lstg.var.psychic=100*v
+					elseif k=='power' then
+						lstg.var.power=v
+					end
+			end
+		end
+	else
+		if self.number==1 then
+			item.PlayerInit()
+			if self.group.item_init then
+				for k,v in pairs(self.group.item_init) do
+					--lstg.var[k]=v
+					if k=='lifeleft' then
+						lstg.var.psychic=100*v
+					elseif k=='power' then
+						lstg.var.power=v
+					end
 				end
 			end
 		end
