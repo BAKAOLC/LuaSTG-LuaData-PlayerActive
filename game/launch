@@ -8,7 +8,7 @@ for k,v in pairs(lstg) do _G[k]=v end
 UnitList=ObjList
 GetnUnit=GetnObj
 
-ShowSplashWindow()
+--ShowSplashWindow()
 --[[
 function Serialize(o)
 	return cjson.encode(o)
