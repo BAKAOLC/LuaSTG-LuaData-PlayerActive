@@ -165,6 +165,8 @@ function laser:ChangeImage(id, index)
 	self.img1 = 'laser'..id..'1'..index
 	self.img2 = 'laser'..id..'2'..index
 	self.img3 = 'laser'..id..'3'..index
+	self.img4 = 'laser_node'..int((index+1)/2)
+	self.img5 = 'ball_mid_b'..int((index+1)/2)
 end
 
 function laser:grow(time, mute, wait)
