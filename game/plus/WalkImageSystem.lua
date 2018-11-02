@@ -311,9 +311,9 @@ function EnemyWalkImageSystem:render(dmgt, dmgmaxt)
         c = dmgt / dmgmaxt
     end
     if obj._blend and obj._a and obj._r and obj._g and obj._b then
-        SetImgState(obj.img, obj._blend, obj._a, obj._r - obj._r * 0.75 * c, obj._g - obj._g * 0.75 * c, obj._b)
+        SetImgState(obj, obj._blend, obj._a, obj._r - obj._r * 0.75 * c, obj._g - obj._g * 0.75 * c, obj._b)
     else
-        SetImgState(obj.img, '', 255, 255 - 255 * 0.75 * c, 255 - 255 * 0.75 * c, 255)
+        SetImgState(obj, '', 255, 255 - 255 * 0.75 * c, 255 - 255 * 0.75 * c, 255)
     end
     
     if obj.aura then
