@@ -51,6 +51,13 @@ LoadImage('rank_Hard','ui_rank',0,64,144,32)
 LoadImage('rank_Lunatic','ui_rank',0,96,144,32)
 LoadImage('rank_Extra','ui_rank',0,128,144,32)
 
+--自机活使用
+LoadTexture('pa_psybar','THlib\\ui\\ui_psybar.png',false)
+LoadImageGroup('pa_psybar_','pa_psybar',0,0,90,900,3,1,0,0)
+LoadTexture('pa_world_back','THlib\\ui\\pa_world_back.png',false)
+LoadImageGroup('pa_world_back_','pa_world_back',0,0,32,480,3,1,0,0)
+LoadImageFromFile('pa_blank_map','THlib\\ui\\blankmap.png')
+
 ui.menu={
 	font_size=0.625,
 	line_height=24,
@@ -230,7 +237,7 @@ function diff_render_obj:render()
 end
 
 --
-function ResetUI()
+function oldResetUI()
 	if setting.resx>setting.resy then
 		if not CheckRes('img','image:UI_img') 	then LoadImageFromFile('ui_bg','THlib\\ui\\ui_bg.png') end
 		if not CheckRes('img','image:LOGO_img') then LoadImageFromFile('logo','THlib\\ui\\logo.png') end
@@ -359,4 +366,282 @@ function ResetUI()
 		end
 	end
 end
+
+function ResetUI()--自机活使用
+	if setting.resx>setting.resy then
+		--LoadImageFromFile('ui_bg','THlib\\ui\\ui_bg_pa1.png')
+		LoadImageFromFile('ui_bg_big','THlib\\ui\\ui_bg_big1.png')
+		LoadImageFromFile('menu_bg','THlib\\ui\\menu_bg.png')
+		
+		function ui.DrawFrame()
+			if CheckRes('img','image:UI_img') then
+				Render('image:UI_img',320,240)
+			else
+				Render('ui_bg_big',427,240,0,480/1080)
+				local w=lstg.world
+				RenderRect('pa_world_back_1',w.scrl-32,w.scrl,0,480)
+				RenderRect('pa_world_back_2',w.scrl,w.scrr,0,480)
+				RenderRect('pa_world_back_3',w.scrr,w.scrr+32,0,480)
+			end
+			SetFontState('menu','',Color(0xFFFFFFFF))
+			RenderText('menu',string.format('%.1ffps',GetFPS()),screen.width-4,1,0.25,'right','bottom')
+		end
+		function ui.DrawMenuBG()
+			SetViewMode'ui'
+			Render('menu_bg',screen.width/2,240,0,1.5)
+			SetFontState('menu','',Color(0xFFFFFFFF))
+			RenderText('menu',string.format('%.1ffps',GetFPS()),screen.width-4,1,0.25,'right','bottom')
+		end
+		function ui.DrawScore()
+			local w=lstg.world
+			
+			--多玩家UI
+			local pl,pl2,pls=player,player,1
+			if jstg.players then
+				pls=0
+				if jstg.players[1] then
+					if IsValid(jstg.players[1]) then
+						pl=jstg.players[1]
+						pls=pls+1
+					end
+				end
+				if jstg.players[2] then
+					if IsValid(jstg.players[2]) then
+						pl2=jstg.players[2]
+						pls=pls+1
+					end
+				end
+			end
+			--各种要用到的变量，储存了玩家槽位，和自机系统数据
+			local slot1,slot2=1,1
+			slot1=GetCurrentPlayerSlot(pl)
+			if pls==2 then slot2=GetCurrentPlayerSlot(pl2) end
+			local maxpsy,expsy=pl.maxpsy*pl.psyuse,pl.expsy*pl.psyuse
+			local maxpsy2,expsy2=maxpsy,expsy
+			if pls==2 then maxpsy2,expsy2=pl2.maxpsy*pl2.psyuse,pl2.expsy*pl2.psyuse end
+			
+			SetViewMode'ui'
+			----------灵力槽
+			do
+				local dx,dy=w.scrl-36,240--总体偏移
+				if pls==1 then
+					--底图
+					Render('pa_psybar_1',dx,dy,0,0.5)
+					--灵力条渲染
+					local rk=max(0,min(lstg.var.psychic[slot1]/maxpsy,1))
+					SetImageState('white','mul+add',Color(255,200,64,208))--Color(255,255,128,128)
+					RenderRect('white',dx-12,dx+19,dy-200,dy-200+400*rk)
+					--溢出值
+					rk=max(0,min(lstg.var.expsychic[slot1]/expsy,1))
+					SetImageState('white','mul+add',Color(255,64,80,200))--Color(255,255,128,0)
+					RenderRect('white',dx-19,dx-12,dy-200,dy-200+400*rk)
+					--渲染分割
+					SetImageState('white','',Color(64,0,0,0))
+					local dh=400/pl.maxpsy
+					for i=1,(pl.maxpsy-1) do
+						RenderRect('white',dx-12,dx+19,dy-200+i*dh,dy-200+1+i*dh)
+					end
+					dh=400/pl.expsy
+					for i=1,(pl.expsy-1) do
+						RenderRect('white',dx-19,dx-12,dy-200+i*dh,dy-200+1+i*dh)
+					end
+					--外框
+					Render('pa_psybar_2',dx,dy,0,0.5)
+					--数值显示
+					SetFontState('score1','',Color(255,255,128,128))--Color(0xFFCD6600))
+					RenderText('score1',string.format('%d',math.floor(lstg.var.psychic[slot1])),dx,dy-200-6,0.4,'center')
+					local rk2=1.0+rk*3.0
+					if rk2==1.0 then
+						SetFontState('score1','',Color(255,255,255,255))
+						RenderText('score1',string.format('x%.1f',rk2),dx+4,dy+200+20,0.4,'center')
+					else
+						SetFontState('score1','',rk*Color(255,224,80,80)+(1-rk)*Color(255,255,255,255))--颜色平滑过渡
+						RenderText('score1',string.format('x%.1f',rk2),dx+4,dy+200+20,0.4+rk*0.02*(1+sin(6*pl.ani)),'center')--跳动效果
+					end
+					RenderText('score1',string.format('%.0f',lstg.var.expsychic[slot1]),dx-20,dy+200+24,0.20,'left')
+				else
+					--底图
+					Render('pa_psybar_3',dx,dy,0,0.5)
+					--灵力条渲染
+					SetImageState('white','mul+add',Color(255,200,64,208))--Color(255,255,128,128)
+					--1
+					local rk=max(0,min(lstg.var.psychic[slot1]/maxpsy,1))
+					RenderRect('white',dx-12,dx+0,dy-200,dy-200+400*rk)
+					--2
+					local rk=max(0,min(lstg.var.psychic[slot2]/maxpsy2,1))
+					RenderRect('white',dx+0,dx+12,dy-200,dy-200+400*rk)
+					--溢出值
+					SetImageState('white','mul+add',Color(255,64,80,200))--Color(255,255,128,0)
+					--1
+					local rk=max(0,min(lstg.var.expsychic[slot1]/expsy,1))
+					RenderRect('white',dx-19,dx-12,dy-200,dy-200+400*rk)
+					--2
+					local rk=max(0,min(lstg.var.expsychic[slot2]/expsy2,1))
+					RenderRect('white',dx+12,dx+19,dy-200,dy-200+400*rk)
+					--渲染分割
+					SetImageState('white','',Color(64,0,0,0))
+					--1
+					local dh=400/pl.maxpsy
+					for i=1,(pl.maxpsy-1) do
+						RenderRect('white',dx-12,dx+0,dy-200+i*dh,dy-200+1+i*dh)
+					end
+					dh=400/pl.expsy
+					for i=1,(pl.expsy-1) do
+						RenderRect('white',dx-19,dx-12,dy-200+i*dh,dy-200+1+i*dh)
+					end
+					--2
+					local dh=400/pl2.maxpsy
+					for i=1,(pl2.maxpsy-1) do
+						RenderRect('white',dx-0,dx+12,dy-200+i*dh,dy-200+1+i*dh)
+					end
+					dh=400/pl2.expsy
+					for i=1,(pl2.expsy-1) do
+						RenderRect('white',dx+12,dx+19,dy-200+i*dh,dy-200+1+i*dh)
+					end
+					--3
+					RenderRect('white',dx-0.5,dx+0.5,dy-200,dy+200)
+					--外框
+					Render('pa_psybar_2',dx,dy,0,0.5)
+					--数值显示
+					--1
+					SetFontState('score1','',Color(255,255,128,128))--Color(0xFFCD6600))
+					RenderText('score1',string.format('%d',math.floor(lstg.var.psychic[slot1])),dx,dy-200-0,0.35,'center')
+					local rk=max(0,min(lstg.var.expsychic[slot1]/expsy,1))
+					local rk2=1.0+rk*3.0
+					if rk2==1.0 then
+						SetFontState('score1','',Color(255,255,255,255))
+						RenderText('score1',string.format('x%.1f',rk2),dx+4,dy+200+28,0.35,'center')
+					else
+						SetFontState('score1','',rk*Color(255,224,80,80)+(1-rk)*Color(255,255,255,255))--颜色平滑过渡
+						RenderText('score1',string.format('x%.1f',rk2),dx+4,dy+200+28,0.35+rk*0.02*(1+sin(6*pl.ani)),'center')--跳动效果
+					end
+					--RenderText('score1',string.format('%.0f',lstg.var.expsychic[slot1]),dx-20,dy+200+24,0.20,'left')
+					--2
+					SetFontState('score1','',Color(255,128,128,255))--Color(0xFFCD6600))
+					RenderText('score1',string.format('%d',math.floor(lstg.var.psychic[slot2])),dx,dy-200-12,0.35,'center')
+					local rk=max(0,min(lstg.var.expsychic[slot2]/expsy2,1))
+					local rk2=1.0+rk*3.0
+					if rk2==1.0 then
+						SetFontState('score1','',Color(255,255,255,255))
+						RenderText('score1',string.format('x%.1f',rk2),dx+4,dy+200+16,0.35,'center')
+					else
+						SetFontState('score1','',rk*Color(255,224,80,80)+(1-rk)*Color(255,255,255,255))--颜色平滑过渡
+						RenderText('score1',string.format('x%.1f',rk2),dx+4,dy+200+16,0.35+rk*0.02*(1+sin(6*pl2.ani)),'center')--跳动效果
+					end
+					--RenderText('score1',string.format('%.0f',lstg.var.expsychic[slot2]),dx-20,dy+200+24,0.20,'left')
+				end
+			end
+			
+			----------分数 TODO:多玩家分数
+			do
+				local dx,dy=w.scrr+16,240+88
+				SetImageState('white','',Color(192,0,0,0))
+				RenderRect('white',dx,dx+96,dy,dy+128)
+				dy=240+80
+				SetFontState('item','',Color(0xFFADADAD))
+				RenderScore('item',max(lstg.tmpvar.hiscore or 0,lstg.var.score),dx+94,dy+128-14,0.6,'right')
+				RenderText('item',string.format('High Score:'),dx+2,dy+128,0.6,'left')
+				SetFontState('item','',Color(0xFFFFFFFF))
+				RenderText('item',string.format('Score:'),dx+2,dy+128-2*14,0.6,'left')
+				RenderScore('item',lstg.var.score,dx+94,dy+128-3*14,0.6,'right')
+				--graze
+				RenderText('item',string.format('Graze:'),dx+2,dy+128-4*14,0.6,'left')
+				if pls==1 then
+					RenderText('item',string.format('%d',lstg.var.graze),dx+94,dy+128-5*14,0.6,'right')
+				elseif pls==2 then
+					RenderText('item',string.format('%d/%d',lstg.var.grazes[slot1],lstg.var.grazes[slot2]),dx+94,dy+128-5*14,0.6,'right')
+				end
+				--已走地图
+				RenderText('item',string.format('Mileage:'),dx+2,dy+128-6*14,0.6,'left')
+				RenderText('item',string.format('%d blocks',0),dx+94,dy+128-7*14,0.6,'right')
+			end
+			
+			----------难度
+			do
+				local dx,dy=w.scrr+64,240-36
+				SetFontState('score3','',Color(0xFFADADAD))
+				local diff=string.match(stage.current_stage.name,"[%w_][%w_ ]*$")
+				local diffimg=CheckRes('img','image:diff_'..diff)
+				if diffimg then
+					Render('image:diff_'..diff,dx,dy)
+				else
+					--by OLC，难度显示加入符卡练习
+					if ext.sc_pr and diff=="Spell Practice" and lstg.var.sc_index then
+						diff=_editor_class[_sc_table[lstg.var.sc_index][1]].difficulty
+						if diff=="All" then diff="SpellCard" end
+					end
+					if diff=='Easy' or diff=='Normal' or diff=='Hard' or diff=='Lunatic' or diff=='Extra' then
+						Render('rank_'..diff,dx,dy,0.5,0.5)
+					else
+						RenderText('score',diff,dx,dy-16,0.5,'center','bottom')
+					end
+				end
+			end
+			
+			----------地图
+			do
+				local dx,dy=w.scrr+16,240-56
+				SetImageState('white','',Color(192,0,0,0))
+				RenderRect('white',dx,dx+96,dy-160,dy)
+				if (w.scrr+16)<(screen.width-16) then--防止有人手欠把游戏炸了
+					SetPlayerActMap(w.scrr+16,240-56-160,96,160)
+				end
+				--地图不存在时渲染默认空白地图
+				if lstg.tmpvar.playermap_host==nil then
+					SetViewMode'map'
+					do
+						local img='pa_blank_map'
+						local world=lstg.act_player_map
+						local timer=stage.current_stage.timer or 0
+						local w,h=GetTextureSize(img)
+						local x,y=timer/4,timer/2
+						for i=-int((world.r+16+x)/w+0.5),int((world.r+16-x)/w+0.5) do
+							for j=-int((world.t+16+y)/h+0.5),int((world.t+16-y)/h+0.5) do
+								Render(img,x+i*w,y+j*h)
+							end
+						end
+					end
+					SetViewMode'ui'
+				end
+			end
+			
+			SetViewMode'world'
+		end
+	else
+		LoadImageFromFile('ui_bg2','THlib\\ui\\ui_bg_2.png')
+		LoadImageFromFile('ui_bg','THlib\\ui\\ui_bg.png')
+		LoadImageFromFile('logo','THlib\\ui\\logo.png')
+		SetImageCenter('logo',0,0)
+		LoadImageFromFile('menu_bg2','THlib\\ui\\menu_bg_2.png')
+		LoadImageFromFile('menu_bg','THlib\\ui\\menu_bg.png')
+		function ui.DrawFrame()
+			Render('ui_bg2',198,264)
+		end
+
+		function ui.DrawMenuBG()
+			SetViewMode'ui'
+			Render('menu_bg2',198,264)
+			SetFontState('menu','',Color(0xFFFFFFFF))
+			RenderText('menu',string.format('%.1ffps',GetFPS()),392,1,0.25,'right','bottom')
+		end
+
+		function ui.DrawScore()
+			RenderText('score','HiScore',8,520,0.5,'left','top')
+			RenderText('score',string.format('%d',max(lstg.tmpvar.hiscore or 0,lstg.var.score)),190,520,0.5,'right','top')
+			RenderText('score','Score',206,520,0.5,'left','top')
+			RenderText('score',string.format('%d',lstg.var.score),388,520,0.5,'right','top')
+			SetFontState('score','',Color(0xFFFF4040))
+			RenderText('score',string.format('%1.2f',lstg.var.power/100),8,496,0.5,'left','top')
+			SetFontState('score','',Color(0xFF40FF40))
+			RenderText('score',string.format('%d',lstg.var.faith),84,496,0.5,'left','top')
+			SetFontState('score','',Color(0xFF4040FF))
+			RenderText('score',string.format('%d',lstg.var.pointrate),160,496,0.5,'left','top')
+			SetFontState('score','',Color(0xFFFFFFFF))
+			RenderText('score',string.format('%d',lstg.var.graze),236,496,0.5,'left','top')
+			RenderText('score',string.rep('*',max(0,lstg.var.lifeleft)),388,496,0.5,'right','top')
+			RenderText('score',string.rep('*',max(0,lstg.var.bomb)),380,490,0.5,'right','top')
+		end
+	end
+end
+
 ResetUI()

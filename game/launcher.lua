@@ -4,7 +4,7 @@ local GetLastKey=_GetLastKey
 
 local _key_code_to_name=KeyCodeToName()--Linput
 local setting_item={'resx','resy','windowed','vsync','sevolume','bgmvolume','res'}
-local Resolution={{640,480},{800,600},{960,720},{1024,768},{1280,960}}
+local Resolution={{960,540},{1280,720},{1600,900},{1920,1080}}
 
 function format_json(str)
 	local ret = ''
@@ -383,7 +383,7 @@ function other_setting_menu:frame()
 					cur_setting.resy=Resolution[cur_setting.res][2]
 					PlaySound('cancel00',0.3)
 				end
-				self.posx=max(1,min(self.posx,5))
+				self.posx=max(1,min(self.posx,4))
 				cur_setting.res=self.posx
 				cur_setting.resx=Resolution[cur_setting.res][1]
 				cur_setting.resy=Resolution[cur_setting.res][2]
@@ -543,8 +543,8 @@ function start_game()
 	SetSEVolume(setting.sevolume)
 	SetBGMVolume(setting.bgmvolume)
 	ResetScreen()--Lscreen
-	ResetUI()
 	SetResourceStatus'global'
+	ResetUI()
 	Include("root.lua")
 	SetResourceStatus'stage'
 	InitAllClass()--Lobject

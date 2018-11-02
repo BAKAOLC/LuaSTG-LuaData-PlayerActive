@@ -432,7 +432,7 @@ end
 ----------------------------------------
 --游戏系统相关
 
-function _drop_item(itemclass, num, x, y)
+function old_drop_item(itemclass, num, x, y)
 	local switch = {
 		[item_power] = function()
 			item.DropItem(x,y,{num,0,0})
@@ -496,6 +496,82 @@ function _drop_item(itemclass, num, x, y)
 	switch[itemclass]()
 end
 
+function _drop_item(itemclass, num, x, y)--自机活使用
+	local switch = {
+		[item_power] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				New(item_power,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_faith] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				--New(item_faith,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_point] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				New(item_point,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_power_large] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				New(item_power_large,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_power_full] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				--New(item_power_full,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_faith_minor] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				New(item_faith_minor,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_extend] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				--New(item_extend,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_chip] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				--New(item_chip,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_bombchip] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				--New(item_bombchip,x+r2*cos(a),y+r2*sin(a))
+			end
+		end,
+		[item_bomb] = function()
+			for i=1,num do
+				local r2=sqrt(ran:Float(1,4))*sqrt(num-1)*5
+				local a=ran:Float(0,360)
+				--New(item_bomb,x+r2*cos(a),y+r2*sin(a))
+			end
+		end
+	}
+	switch[itemclass]()
+end
+
 function old_init_item(self)--用于关卡开始时重置各个系统参数
 	if lstg.var.is_practice then
 		item.PlayerInit()
@@ -523,7 +599,7 @@ function _init_item(self)--自机活使用
 			for k,v in pairs(self.item_init) do
 					--lstg.var[k]=v
 					if k=='lifeleft' then
-						lstg.var.psychic=100*v
+						lstg.var.psychic={100*v,100*v,100*v,100*v}
 					elseif k=='power' then
 						lstg.var.power=v
 					end
@@ -536,7 +612,7 @@ function _init_item(self)--自机活使用
 				for k,v in pairs(self.group.item_init) do
 					--lstg.var[k]=v
 					if k=='lifeleft' then
-						lstg.var.psychic=100*v
+						lstg.var.psychic={100*v,100*v,100*v,100*v}
 					elseif k=='power' then
 						lstg.var.power=v
 					end

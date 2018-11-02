@@ -9,12 +9,16 @@ LoadPS('player_death_ef','THlib\\player\\player_death_ef.psi','parimg1')
 LoadPS('graze','THlib\\player\\graze.psi','parimg6')
 LoadImageFromFile('player_spell_mask','THlib\\player\\spellmask.png')
 
+--自机活使用
+LoadTexture('pa_magicline','THlib\\player\\playermagicline.png',false)
+LoadImageGroup('pa_collect_circleline','pa_magicline',256,0,64,32,1,16)
+
 ----------------------------------------
 --player class
 
 player_class=Class(object)
 
-function player_class:init()
+function player_class:init(slot)
 	if not lstg.var.init_player_data then error('Player data has not been initialized. (Call function item.PlayerInit.)') end
 	
 	self.group=GROUP_PLAYER
@@ -52,11 +56,10 @@ function player_class:init()
 	
 	self.checkF=10--决死时间
 	self.collectR1=24--高速收点半径
-	self.collectR2=192--低速收点半径
-	self.psyuse=100--灵击消耗
-	self.breaklose=100--中弹丢失灵力
+	self.collectR2=160--低速收点半径
+	self.psyuse=100--灵力消耗
 	self.maxpsy=16--最大灵力
-	self.expsy=8--灵力溢出
+	self.expsy=8--灵力溢出（倍数）
 	self.eyeshot=1--感知距离
 	
 	self._collectR=24--过渡变量
@@ -69,6 +72,8 @@ function player_class:init()
 	--存下按键状态
 	self._temp_key=nil
 	self._temp_keyp=nil
+	--输入槽位
+	if slot then self.keyslot=slot end
 	
 	self._wisys = PlayerWalkImageSystem(self, 8)--by OLC，自机行走图系统
 end
@@ -258,7 +263,7 @@ function player_class:framefunc()--自机活使用
 			if KeyIsDown'shoot' and self.nextshoot<=0 then
 				self.class.shoot(self)
 			end
-			if KeyIsDown'spell' and self.nextspell<=0 and not lstg.var.block_spell and lstg.var.psychic>=self.psyuse then--and lstg.var.bomb>0
+			if KeyIsDown'spell' and self.nextspell<=0 and not lstg.var.block_spell and item.PlayerCanPsy(self) then
 				item.PlayerPsy(self)--item.PlayerSpell()
 				self.class.spell(self)
 				self.death=0
@@ -392,11 +397,12 @@ function player_class:framefunc()--自机活使用
 		local k=sin(self._lh2*90)
 		self._collectRA=max(0,min(k,1))
 		self._collectR=k*self.collectR2+(1-k)*self.collectR1
+		
+		--pointrate
+		lstg.var.pointrates[GetCurrentPlayerSlot(self)]=item.PointRateFunc(lstg.var,self)
 	end
 	--time_stop
 	if self.time_stop then self.timer=self.timer-1 end
-	
-	RunSystem("on_player_frame",self)
 end
 
 function player_class:keystart()
@@ -418,15 +424,14 @@ end
 function player_class:render()
 	self._wisys:render()--by OLC，自机行走图系统
 	
-	player_class.rendertest(self)--自机活使用
+	player_class.systemrender(self)--自机活使用
 end
 
-function player_class:rendertest()--自机活使用
-	for i=1,16 do SetImageState('bossring1'..i,'mul+add',Color(self._collectRA*128,255,255,255)) end
-	misc.RenderRing('bossring1',self.x,self.y,self._collectR,self._collectR+8,self.ani*3,32,16)
-	
-	SetFontState('menu','',Color(0xFFFFFFFF))
-	RenderText('menu',string.format('%.2ffps',lstg.var.psychic),0,0,0.25,'center')
+function player_class:systemrender()--自机活使用
+	if self._collectRA>=0.01 then
+		for i=1,16 do SetImageState('pa_collect_circleline'..i,'mul+add',Color(self._collectRA*80,255,255,255)) end
+		misc.RenderRing('pa_collect_circleline',self.x,self.y,self._collectR-32,self._collectR,self.ani*2,48,16)
+	end
 end
 
 function player_class:oldcolli(other)
@@ -441,8 +446,9 @@ end
 
 function player_class:colli(other)--自机活使用
 	if self.death==0 and not self.dialog and not cheat then
-		if self.protect==0 then
+		if self.protect<=0 then
 			PlaySound('pldead00',0.5)
+			item.PlayerStruck(self)
 			self.death=90+self.checkF--可以设置决死时间
 		end
 		if other.group==GROUP_ENEMY_BULLET then Del(other) end
@@ -487,6 +493,7 @@ function MixTable(x,t1,t2)--子机位置表的线性插值
 	end
 end
 
+
 grazer=Class(object)
 
 function grazer:init(player)
@@ -528,10 +535,32 @@ end
 
 function grazer:colli(other)
 	if other.group~=GROUP_ENEMY and (not other._graze) then
-		item.PlayerGraze()
-		--lstg.player.grazer.grazed=true
+		item.PlayerGraze(self.player)
 		self.grazed=true
 		other._graze=true
+	end
+end
+
+
+function GetCurrentPlayerSlot(p)--获得传入的玩家的槽位，返回整数1、2等，分别代表1p、2p等--自机活使用
+	if p==nil and IsValid(player) then p=player end--没有传入player时指向当前player
+	if p.keyslot then
+		return p.keyslot--有这个变量时直接返回
+	elseif jstg.players then
+		--没有keyslot时先遍历jstg.players
+		for pos=1,#jstg.players do
+			if IsValid(jstg.players[pos]) then
+				if jstg.players[pos]==p then
+					return pos
+				end
+			end
+		end
+		if #jstg.players<1 then
+			return 0--没有自机的情况，比如在主菜单，异常情况，应该特别处理
+		end
+	else
+		Print('Warning:jstg.players is non-existent.')
+		return 0--异常情况，在ex+中，jstg.players一定存在，如果执行到这里说明jstg.players炸了
 	end
 end
 
@@ -696,7 +725,7 @@ player_list={
 	{'Izayoi Sakuya','sakuya_player','Sakuya'},
 }
 
-function AddPlayerToPlayerList(displayname,classname,replayname,pos,_replace)
+function AddPlayerToPlayerList(displayname,classname,replayname,pos,_replace)--然并卵……
 	if _replace then
 		player_list[pos]={displayname,classname,replayname}
 	elseif pos then

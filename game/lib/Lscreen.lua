@@ -9,7 +9,7 @@ screen={}
 
 function ResetScreen()
 	if setting.resx>setting.resy then
-		screen.width=640
+		screen.width=854--640
 		screen.height=480
 		screen.scale=setting.resy/screen.height
 		screen.dx=(setting.resx-screen.scale*screen.width)*0.5
@@ -76,6 +76,9 @@ function SetDefaultWorld(l,b,w,h,bound)
 	)
 end
 
+--SetDefaultWorld(128,16,384,448)--自机活使用
+SetDefaultWorld(427-192,16,384,448)--自机活使用
+
 --用于重置world参数
 function RawGetDefaultWorld()
 	local w={}
@@ -112,6 +115,23 @@ function ResetWorld()
 	SetBound(lstg.world.boundl,lstg.world.boundr,lstg.world.boundb,lstg.world.boundt)
 end
 
+function ResetJavastageWorlds()--专门克制jstg.worlds
+	if jstg.worlds then
+		--遍历jstg.worlds设置默认值
+		for p=1,#jstg.worlds do
+			--最好把world mask保存好
+			if jstg.worlds[p].world then
+				local ws=GetDefaultWorld()
+				ws.world=jstg.worlds[p].world
+				jstg.worlds[p]=ws
+			elseif jstg.worlds[p].l then
+				local ws=GetDefaultWorld()
+				jstg.worlds[p]=ws
+			end
+		end
+	end
+end
+
 --用于设置world参数
 function OriginalSetWorld(l,r,b,t,bl,br,bb,bt,sl,sr,sb,st,pl,pr,pb,pt)
 	local w=lstg.world
@@ -146,6 +166,18 @@ function SetWorld(l,b,w,h,bound)
 	(-w/2),(w/2),(-h/2),(h/2)
 	)
 	SetBound(lstg.world.boundl,lstg.world.boundr,lstg.world.boundb,lstg.world.boundt)
+end
+
+lstg.act_player_map={--自机活使用
+	l=-96/2,r=96/2,b=-160/2,t=160/2,
+	scrl=320+192+16,scrr=320+192+16+96,scrb=240-56-160,scrt=240-56,
+}
+
+function SetPlayerActMap(l,b,w,h)--自机活使用
+	lstg.act_player_map={
+		l=-w/2,r=w/2,b=-h/2,t=h/2,
+		scrl=l,scrr=l+w,scrb=b,scrt=b+h,
+	}
 end
 
 ----------------------------------------
@@ -212,10 +244,17 @@ function SetViewMode(mode)
 		SetFog()
 		SetImageScale((lstg.world.r-lstg.world.l)/(lstg.world.scrr-lstg.world.scrl))
 	elseif mode=='ui' then
-		SetOrtho(0.5,screen.width+0.5,-0.5,screen.height-0.5)
+		--SetOrtho(0.5,screen.width+0.5,-0.5,screen.height-0.5)
+		SetOrtho(0,screen.width,0,screen.height)
 		SetViewport(screen.dx,screen.width*screen.scale+screen.dx,screen.dy,screen.height*screen.scale+screen.dy)
 		SetFog()
 		SetImageScale(1)
+	elseif mode=='map' then--自机活使用
+		local m=lstg.act_player_map
+		SetViewport(m.scrl*screen.scale+screen.dx,m.scrr*screen.scale+screen.dx,m.scrb*screen.scale+screen.dy,m.scrt*screen.scale+screen.dy)
+		SetOrtho(m.l,m.r,m.b,m.t)
+		SetFog()
+		SetImageScale((m.r-m.l)/(m.scrr-m.scrl))
 	else error('Invalid arguement.') end
 end
 
@@ -236,4 +275,21 @@ end
 function ScreenToWorld(x,y)--该功能并不完善
 	local dx,dy=WorldToScreen(0,0)
 	return x-dx,y-dy
+end
+
+----------------------------------------
+--震屏接口
+--替换老的震屏实现，不改lstg.world防止出问题
+
+LoadFX('screen_transform','shader\\screen_transform.fx')
+CreateRenderTarget('_screen_shake')
+
+lstg.ScreenShakeTransForm={x=0,y=0}
+
+function ScreenShakeClear()
+	lstg.ScreenShakeTransForm={x=0,y=0}
+end
+
+function SetScreenShake(dx,dy)
+	lstg.ScreenShakeTransForm={x=dx,y=dy}
 end

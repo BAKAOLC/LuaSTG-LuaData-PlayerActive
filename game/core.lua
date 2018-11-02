@@ -143,6 +143,8 @@ function DoFrame()--行为帧动作(和游戏循环的帧动作分开)
 	if stage.next_stage then
 		local w1=GetDefaultWorld()--by ETC，默认world参数由Lscreen提供
 		jstg.ApplyWorld(w1)
+		ResetJavastageWorlds()--专门克制jstg.worlds，由Lscreen提供
+		ScreenShakeClear()--重置震屏--自机活
 		
 		ResetLstgtmpvar()--重置lstg.tmpvar
 		ex.Reset()--重置ex全局变量

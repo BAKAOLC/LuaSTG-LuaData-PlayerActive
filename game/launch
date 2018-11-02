@@ -284,6 +284,9 @@ end
 if not (lfs.attributes('data.zip')==nil) then
 	LoadPack('data.zip')
 end
+if not (lfs.attributes('patch.zip')==nil) then
+	LoadPack('patch.zip')
+end
 if setting.mod~='launcher' then
 	LoadPack('mod\\'..setting.mod..'.zip')--正常加载mod
 elseif lfs.attributes('launcher.lua')==nil then

@@ -198,4 +198,5 @@ function system.on_collect_item(self,player)
 	end
 end
 
-lstg.systems[2] = system
+--自机活取消活7系统
+--lstg.systems[2] = system

@@ -1,12 +1,18 @@
 LoadTexture('item','THlib\\item\\item.png')
 LoadImageGroup('item','item',0,0,32,32,2,5,8,8)
 LoadImageGroup('item_up','item',64,0,32,32,2,5)
-SetImageState('item8','mul+add',Color(0xC0FFFFFF))
+SetImageState('item1','mul+add',Color(128,255,255,255))
+SetImageState('item2','mul+add',Color(128,255,255,255))
+--SetImageState('item6','',Color(255,255,255,255))
+SetImageState('item8','mul+add',Color(192,255,255,255))
 LoadTexture('bonus1','THlib\\item\\item.png')
 LoadTexture('bonus2','THlib\\item\\item.png')
 LoadTexture('bonus3','THlib\\item\\item.png')
 
 lstg.var.collectingitem=0
+
+--自机活常量
+local POWERMINOR=1--常量，小灵力点加灵力的数量
 
 item=Class(object)
 function item:init(x,y,t,v,angle)
@@ -97,28 +103,57 @@ function Getbomb(v)
 	end
 end
 
+function Getpsy(p,v)--自机活使用
+	local slot=GetCurrentPlayerSlot(p)
+	
+	lstg.var.psychic[slot]=max(0,lstg.var.psychic[slot]+v)
+	
+	local maxpsy=p.maxpsy*p.psyuse
+	local expsy=p.expsy*p.psyuse
+	if lstg.var.psychic[slot]>maxpsy and p.death==0 then
+		lstg.var.expsychic[slot]=lstg.var.expsychic[slot]+(lstg.var.psychic[slot]-maxpsy)
+	end
+	
+	lstg.var.psychic[slot]=max(0,min(lstg.var.psychic[slot],maxpsy))
+	lstg.var.expsychic[slot]=max(0,min(lstg.var.expsychic[slot],expsy))
+end
+function Clearpsy(p)
+	local slot=GetCurrentPlayerSlot(p)
+	lstg.var.psychic[slot]=0
+	lstg.var.expsychic[slot]=0
+end
+
 item_power=Class(item)
 function item_power:init(x,y,v,a)
 	item.init(self,x,y,1,v,a)
 end
-function item_power:collect()
+function item_power:oldcollect()
 	Getlife(0.3)
+end
+function item_power:collect(other)--自机活使用
+	Getpsy(other,POWERMINOR)
 end
 
 item_power_large=Class(item)
 function item_power_large:init(x,y,v,a)
 	item.init(self,x,y,6,v,a)
 end
-function item_power_large:collect()
+function item_power_large:oldcollect()
 	GetPower(100)
+end
+function item_power_large:collect(other)--自机活使用
+	Getpsy(other,100*POWERMINOR)
 end
 
 item_power_full=Class(item)
 function item_power_full:init(x,y)
 	item.init(self,x,y,4)
 end
-function item_power_full:collect()
+function item_power_full:oldcollect()
 	GetPower(400)
+end
+function item_power_full:collect(other)--自机活使用
+	Getpsy(other,32768)
 end
 
 item_extend=Class(item)
@@ -163,16 +198,7 @@ function item_faith:init(x,y)
 	item.init(self,x,y,5)
 end
 function item_faith:collect()
-	--if self.attract>=8 then
-	--	lstg.var.collectitem[self.num]=lstg.var.collectitem[self.num]+1
-	--	if player.nextcollect>0 and player.nextcollect<15 and self.collected and player.itemed then player.nextcollect=15 end
-	--end
-	--local var=lstg.var
 	Getbomb(0.6)
-	--var.itembar[2]=var.itembar[2]+1
---    New(float_text,'item','10000',self.x,self.y+6,0.75,90,60,0.5,0.5,Color(0x8000C000),Color(0x0000C000))
---    var.faith=var.faith+4
---    var.score=var.score+10000
 end
 
 item_faith_minor=Class(object)
@@ -229,11 +255,69 @@ function item_faith_minor:colli(other)
 	item.colli(self,other)
 end
 
+item_faith_minor=Class(object)--自机活使用
+function item_faith_minor:init(x,y)
+	self.x=x
+	self.y=y
+	self.img='item8'
+	self.a,self.b,self.rect=8,8,false
+	self.group=GROUP_ITEM
+	self.layer=LAYER_ITEM
+	--if not BoxCheck(self,lstg.world.l,lstg.world.r,lstg.world.b,lstg.world.t) then RawDel(self) end
+	self.vx=ran:Float(-0.15,0.15)
+	local ranvy=ran:Float(3.25,3.75)
+	self.vy=ranvy
+	self.ay=-ranvy/45
+	self.attract=0
+	self.bound=false
+	self.is_minor=true
+	self.target=jstg.players[ex._item1%#jstg.players+1]
+	ex._item1=ex._item1+1
+end
+function item_faith_minor:frame()
+	local player=self.target
+	if self.timer==45 then
+		self.ay=0
+	end
+	if self.timer>=54 then
+		SetV(self,8,Angle(self,player))
+	end
+end
+function item_faith_minor:colli(other)
+	if IsPlayer(other) then
+		item_faith_minor.collect(self,other)
+		PlaySound('item00',0.3,self.x/200)
+		Del(self)
+	end
+	IsPlayerEnd()
+end
+function item_faith_minor:collect(other)
+	local slot=GetCurrentPlayerSlot(other)
+	local var=lstg.var
+	--自适应出字位置和方向
+	local w=lstg.world
+	local x,y,v,a=self.x+32,self.y+8,2,60
+	if x>(w.r-16) then
+		x,a=self.x-32,120
+	end
+	if y>(w.t-24) then
+		y,a=self.y-8,-a
+	end
+	if self.attract==8 then
+		New(float_text,'item',int(var.pointrates[slot]/1000)*10,x,y,v,a,15,0.6,0.6,Color(0x80FFFF00),Color(0x00FFFF00))
+		var.score=var.score+int(var.pointrates[slot]/1000)*10
+	else
+		New(float_text,'item',int(var.pointrates[slot]/2000)*10,x,y,v,a,15,0.6,0.6,Color(0x80FFFFFF),Color(0x00FFFFFF))
+		var.score=var.score+int(var.pointrates[slot]/2000)*10
+	end
+end
+
 item_point=Class(item)
 function item_point:init(x,y)
 	item.init(self,x,y,2)
 end
-function item_point:collect()
+function item_point:collect(other)
+	local slot=GetCurrentPlayerSlot(other)
 	local var=lstg.var
 	--自适应出字位置和方向
 	local w=lstg.world
@@ -245,15 +329,15 @@ function item_point:collect()
 		y,a=self.y-8,-a
 	end
 	if self.attract==8 then
-		New(float_text,'item',var.pointrate,x,y,v,a,60,0.6,0.6,Color(0x80FFFF00),Color(0x00FFFF00))
-		var.score=var.score+var.pointrate
+		New(float_text,'item',var.pointrates[slot],x,y,v,a,30,0.6,0.6,Color(0x80FFFF00),Color(0x00FFFF00))
+		var.score=var.score+var.pointrates[slot]
 	else
-		New(float_text,'item',int(var.pointrate/20)*10,x,y,v,a,60,0.6,0.6,Color(0x80FFFFFF),Color(0x00FFFFFF))
-		var.score=var.score+int(var.pointrate/20)*10
+		New(float_text,'item',int(var.pointrates[slot]/20)*10,x,y,v,a,30,0.6,0.6,Color(0x80FFFFFF),Color(0x00FFFFFF))
+		var.score=var.score+int(var.pointrates[slot]/20)*10
 	end
 end
 
-function item.DropItem(x,y,drop)
+function item.oldDropItem(x,y,drop)
 	local m
 	if lstg.var.power==400 then
 		m = drop[1]
@@ -295,10 +379,54 @@ function item.DropItem(x,y,drop)
 	end
 end
 
+function item.DropItem(x,y,drop)--自机活使用
+	local m
+	if lstg.var.power==400 then
+		m = drop[1]
+	elseif drop[1] >= 400 then
+		m = drop[1]
+	else
+		m = drop[1] / 100 + drop[1] % 100
+	end
+	local n=m+drop[2]+drop[3]
+	if n<1 then return end
+	local r=sqrt(n-1)*5
+	if drop[1] >= 400 then
+		local r2=sqrt(ran:Float(1,4))*r
+		local a=ran:Float(0,360)
+		New(item_power_full,x+r2*cos(a),y+r2*sin(a))
+	else
+		drop[4] = drop[1] / 100
+		drop[1] = drop[1] % 100
+		for i=1,drop[4] do
+			local r2=sqrt(ran:Float(1,4))*r
+			local a=ran:Float(0,360)
+			New(item_power_large,x+r2*cos(a),y+r2*sin(a))
+		end
+		for i=1,drop[1] do
+			local r2=sqrt(ran:Float(1,4))*r
+			local a=ran:Float(0,360)
+			New(item_power,x+r2*cos(a),y+r2*sin(a))
+		end
+	end
+	--[=[
+	for i=1,drop[2] do
+		local r2=sqrt(ran:Float(1,4))*r
+		local a=ran:Float(0,360)
+		New(item_faith,x+r2*cos(a),y+r2*sin(a))
+	end
+	--]=]
+	for i=1,drop[3] do
+		local r2=sqrt(ran:Float(1,4))*r
+		local a=ran:Float(0,360)
+		New(item_point,x+r2*cos(a),y+r2*sin(a))
+	end
+end
+
 item.sc_bonus_max=2000000
 item.sc_bonus_base=1000000
 
-function item:StartChipBonus()
+function item:oldStartChipBonus()
 	self.chip_bonus=true
 	self.bombchip_bonus=true
 end
@@ -313,16 +441,10 @@ function item:oldEndChipBonus(x,y)
 	end
 end
 
+function item:StartChipBonus()--自机活使用
+end
+
 function item:EndChipBonus(x,y)--自机活使用
-	if false then--boss不掉碎片了（
-	if self.chip_bonus and self.bombchip_bonus then
-			New(item_chip,x-20,y)
-			New(item_bombchip,x+20,y)
-	else
-		if self.chip_bonus then New(item_chip,x,y) end
-		if self.bombchip_bonus then New(item_bombchip,x,y) end
-	end
-	end
 end
 
 ------------------------------------------
@@ -350,22 +472,18 @@ function item.PlayerInit()--自机活使用
 	lstg.var.power=400
 	lstg.var.lifeleft=0
 	lstg.var.bomb=0
-	lstg.var.bonusflag=0
-	lstg.var.chip=0
-	lstg.var.faith=0
 	lstg.var.graze=0
 	lstg.var.score=0
-	lstg.var.bombchip=0
 	lstg.var.coun_num=0
-	lstg.var.pointrate=item.PointRateFunc(lstg.var)
-	lstg.var.collectitem={0,0,0,0,0,0}
-	lstg.var.itembar={0,0,0}
 	lstg.var.block_spell=false
-	lstg.var.chip_bonus=false
-	lstg.var.bombchip_bonus=false
 	lstg.var.init_player_data=true
 	
-	lstg.var.psychic=0
+	lstg.var.grazes={0,0,0,0}
+	local rate=item.PointRateFunc(lstg.var)
+	lstg.var.pointrate=rate
+	lstg.var.pointrates={rate,rate,rate,rate}
+	lstg.var.psychic={400,400,400,400}
+	lstg.var.expsychic={0,0,0,0}
 end
 
 function item.oldPlayerReinit()
@@ -383,15 +501,19 @@ end
 function item.PlayerReinit()--自机活使用
 	lstg.var.power=400
 	lstg.var.lifeleft=0
-	lstg.var.chip=0
 	lstg.var.bomb=0
-	lstg.var.bomb_chip=0
+	lstg.var.graze=0
 	lstg.var.block_spell=false
 	lstg.var.init_player_data=true
 	lstg.var.coun_num=min(9,lstg.var.coun_num+1)
 	lstg.var.score=lstg.var.coun_num
 	
-	lstg.var.psychic=0
+	lstg.var.grazes={0,0,0,0}
+	local rate=item.PointRateFunc(lstg.var)
+	lstg.var.pointrate=rate
+	lstg.var.pointrates={rate,rate,rate,rate}
+	lstg.var.psychic={400,400,400,400}
+	lstg.var.expsychic={0,0,0,0}
 end
 
 ------------------------------------------
@@ -486,42 +608,73 @@ function item.PlayerSpell()
 	lstg.var.bombchip_bonus=false
 end
 
-function item.PlayerGraze()
+function item.oldPlayerGraze()
 	lstg.var.graze=lstg.var.graze+1
 end
 
-function item.PointRateFunc(var)
+function item.oldPointRateFunc(var)
 	local r=10000+int(var.graze/10)*10+int(lstg.var.faith/10)*10
 	return r
 end
 
-------------------------------------------
---自机活使用
-function item:PlayerDeath()
-	self.protect=360
-	lstg.var.lifeleft=lstg.var.lifeleft-1
-end
-
-function item:PlayerBreak()
-	lstg.var.chip_bonus=false
-	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
-	ex.ClearBonus(true,false)
-	
-	local shoulduse=self.breaklose*(2^self._breaktimes)
-	if lstg.var.psychic>=self.breaklose then
-		--还有灵力
-		self.death=0
-		self.protect=360*(min(lstg.var.psychic,shoulduse)/shoulduse)--先判断无敌时间
-		lstg.var.psychic=max(0,lstg.var.psychic-shoulduse)--再扣除
+function item.PointRateFunc(var,p)--自机活使用
+	if p then
+		local slot=GetCurrentPlayerSlot(p)
+		local expsy=p.expsy*p.psyuse
+		local r=(10000+int(var.grazes[slot]/10)*10)*(1.0+3.0*(var.expsychic[slot]/expsy))
+		return r
 	else
-		--灵力不足
-		lstg.var.psychic=0
-		item.PlayerDeath(self)
+		local r=(10000+int(var.graze/10)*10)*1.0
+		return r
 	end
 end
 
-function item:PlayerPsy()
+------------------------------------------
+--自机活使用
+function item.PlayerDeath(p)--玩家疮痍
+	p.protect=360
+	lstg.var.lifeleft=lstg.var.lifeleft-1
+end
+
+function item.PlayerBreak(p)--玩家中弹后超过决死判定
+	local slot=GetCurrentPlayerSlot(p)
+	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
+	ex.ClearBonus(true,false)
+	
+	local shoulduse=p.psyuse*(2^p._breaktimes)
+	if lstg.var.psychic[slot]>=p.psyuse then
+		--还有灵力
+		p.death=0
+		--无敌时间只能为整数，否正行走图闪烁有问题
+		--无敌时间最好不小于0
+		p.protect=int(360*max(0,(min(lstg.var.psychic[slot],shoulduse)/shoulduse)))--先判断无敌时间
+		Getpsy(p,-shoulduse)--再扣除
+	else
+		--灵力不足
+		Clearpsy(p)
+		item.PlayerDeath(p)
+	end
+end
+
+function item.PlayerPsy(p)--玩家灵击
+	local slot=GetCurrentPlayerSlot(p)
 	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
 	ex.ClearBonus(false,true)
-	lstg.var.psychic=lstg.var.psychic-self.psyuse--灵击消耗
+	Getpsy(p,-p.psyuse)--灵击消耗
+end
+
+function item.PlayerCanPsy(p)--判断玩家是否可以灵击
+	return lstg.var.psychic[GetCurrentPlayerSlot(p)]>=p.psyuse
+end
+
+function item.PlayerStruck(p)--中弹
+	--只要中弹就清空溢出值
+	local slot=GetCurrentPlayerSlot(p)
+	lstg.var.expsychic[slot]=0
+end
+
+function item.PlayerGraze(p)--自机活擦弹
+	local slot=GetCurrentPlayerSlot(p)
+	lstg.var.grazes[slot]=lstg.var.grazes[slot]+1
+	lstg.var.graze=lstg.var.graze+1
 end

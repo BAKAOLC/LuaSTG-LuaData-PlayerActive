@@ -1061,7 +1061,7 @@ function boss_ui:render()
 	end
 	if self.pointer_x and self.drawpointer then
 		SetViewMode'ui'
-		Render('boss_pointer',WorldToScreen(max(min(self.pointer_x,lstg.world.r-24),lstg.world.l+24),lstg.world.b+16))--适配宽屏
+		Render('boss_pointer',WorldToScreen(max(min(self.pointer_x,lstg.world.r-24),lstg.world.l+24),lstg.world.b))--适配宽屏
 		SetViewMode'world'
 	end
 	

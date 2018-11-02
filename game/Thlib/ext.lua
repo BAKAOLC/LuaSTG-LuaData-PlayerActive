@@ -191,7 +191,29 @@ function RenderFunc()
 	EndScene()
 end
 
+function BeforeRender()
+	--震屏特效支持
+	SetViewMode'ui'
+	PushRenderTarget('_screen_shake')
+	RenderClear(Color(255,0,0,0))
+	SetViewMode'world'
+end
+
 function AfterRender()
+	--震屏
+	PopRenderTarget('_screen_shake')
+	SetViewMode'ui'
+	PostEffect('_screen_shake','screen_transform','',{
+		dx=lstg.ScreenShakeTransForm.x,
+		dy=lstg.ScreenShakeTransForm.y,
+		vx=lstg.world.scrl*screen.scale+screen.dx,
+		vy=lstg.world.scrb*screen.scale+screen.dy,
+		vz=lstg.world.scrr*screen.scale+screen.dx,
+		vw=lstg.world.scrt*screen.scale+screen.dy,
+		scale=screen.scale,
+	})
+	SetViewMode'world'
+	
 	if ext.pause_menu then
 		--暂停菜单渲染
 		ext.pause_menu.render(ext.pause_menu)
