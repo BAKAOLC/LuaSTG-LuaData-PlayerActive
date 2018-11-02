@@ -74,6 +74,7 @@ function player_class:init(slot)
 	self._temp_keyp=nil
 	--输入槽位
 	if slot then self.keyslot=slot end
+	self._keyslot=self.keyslot--私密变量
 	
 	self._wisys = PlayerWalkImageSystem(self, 8)--by OLC，自机行走图系统
 end
@@ -544,8 +545,8 @@ end
 
 function GetCurrentPlayerSlot(p)--获得传入的玩家的槽位，返回整数1、2等，分别代表1p、2p等--自机活使用
 	if p==nil and IsValid(player) then p=player end--没有传入player时指向当前player
-	if p.keyslot then
-		return p.keyslot--有这个变量时直接返回
+	if p._keyslot then
+		return p._keyslot--有这个变量时直接返回
 	elseif jstg.players then
 		--没有keyslot时先遍历jstg.players
 		for pos=1,#jstg.players do

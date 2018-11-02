@@ -423,8 +423,9 @@ function item.DropItem(x,y,drop)--自机活使用
 	end
 end
 
-item.sc_bonus_max=2000000
-item.sc_bonus_base=1000000
+--比之前增加10倍的符卡分
+item.sc_bonus_max=20000000
+item.sc_bonus_base=10000000
 
 function item:oldStartChipBonus()
 	self.chip_bonus=true
