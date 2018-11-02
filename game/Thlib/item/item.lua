@@ -11,8 +11,8 @@ LoadTexture('bonus3','THlib\\item\\item.png')
 
 lstg.var.collectingitem=0
 
---×Ô»ú»î³£Á¿
-local POWERMINOR=1--³£Á¿£¬Ğ¡ÁéÁ¦µã¼ÓÁéÁ¦µÄÊıÁ¿
+--è‡ªæœºæ´»å¸¸é‡
+local POWERMINOR=1--å¸¸é‡ï¼Œå°çµåŠ›ç‚¹åŠ çµåŠ›çš„æ•°é‡
 
 item=Class(object)
 function item:init(x,y,t,v,angle)
@@ -103,7 +103,7 @@ function Getbomb(v)
 	end
 end
 
-function Getpsy(p,v)--×Ô»ú»îÊ¹ÓÃ
+function Getpsy(p,v)--è‡ªæœºæ´»ä½¿ç”¨
 	local slot=GetCurrentPlayerSlot(p)
 	
 	lstg.var.psychic[slot]=max(0,lstg.var.psychic[slot]+v)
@@ -130,7 +130,7 @@ end
 function item_power:oldcollect()
 	Getlife(0.3)
 end
-function item_power:collect(other)--×Ô»ú»îÊ¹ÓÃ
+function item_power:collect(other)--è‡ªæœºæ´»ä½¿ç”¨
 	Getpsy(other,POWERMINOR)
 end
 
@@ -141,7 +141,7 @@ end
 function item_power_large:oldcollect()
 	GetPower(100)
 end
-function item_power_large:collect(other)--×Ô»ú»îÊ¹ÓÃ
+function item_power_large:collect(other)--è‡ªæœºæ´»ä½¿ç”¨
 	Getpsy(other,100*POWERMINOR)
 end
 
@@ -152,7 +152,7 @@ end
 function item_power_full:oldcollect()
 	GetPower(400)
 end
-function item_power_full:collect(other)--×Ô»ú»îÊ¹ÓÃ
+function item_power_full:collect(other)--è‡ªæœºæ´»ä½¿ç”¨
 	Getpsy(other,32768)
 end
 
@@ -255,7 +255,7 @@ function item_faith_minor:colli(other)
 	item.colli(self,other)
 end
 
-item_faith_minor=Class(object)--×Ô»ú»îÊ¹ÓÃ
+item_faith_minor=Class(object)--è‡ªæœºæ´»ä½¿ç”¨
 function item_faith_minor:init(x,y)
 	self.x=x
 	self.y=y
@@ -294,7 +294,7 @@ end
 function item_faith_minor:collect(other)
 	local slot=GetCurrentPlayerSlot(other)
 	local var=lstg.var
-	--×ÔÊÊÓ¦³ö×ÖÎ»ÖÃºÍ·½Ïò
+	--è‡ªé€‚åº”å‡ºå­—ä½ç½®å’Œæ–¹å‘
 	local w=lstg.world
 	local x,y,v,a=self.x+32,self.y+8,2,60
 	if x>(w.r-16) then
@@ -319,7 +319,7 @@ end
 function item_point:collect(other)
 	local slot=GetCurrentPlayerSlot(other)
 	local var=lstg.var
-	--×ÔÊÊÓ¦³ö×ÖÎ»ÖÃºÍ·½Ïò
+	--è‡ªé€‚åº”å‡ºå­—ä½ç½®å’Œæ–¹å‘
 	local w=lstg.world
 	local x,y,v,a=self.x+32,self.y+8,1,60
 	if x>(w.r-16) then
@@ -379,7 +379,7 @@ function item.oldDropItem(x,y,drop)
 	end
 end
 
-function item.DropItem(x,y,drop)--×Ô»ú»îÊ¹ÓÃ
+function item.DropItem(x,y,drop)--è‡ªæœºæ´»ä½¿ç”¨
 	local m
 	if lstg.var.power==400 then
 		m = drop[1]
@@ -423,7 +423,7 @@ function item.DropItem(x,y,drop)--×Ô»ú»îÊ¹ÓÃ
 	end
 end
 
---±ÈÖ®Ç°Ôö¼Ó10±¶µÄ·û¿¨·Ö
+--æ¯”ä¹‹å‰å¢åŠ 10å€çš„ç¬¦å¡åˆ†
 item.sc_bonus_max=20000000
 item.sc_bonus_base=10000000
 
@@ -442,10 +442,10 @@ function item:oldEndChipBonus(x,y)
 	end
 end
 
-function item:StartChipBonus()--×Ô»ú»îÊ¹ÓÃ
+function item:StartChipBonus()--è‡ªæœºæ´»ä½¿ç”¨
 end
 
-function item:EndChipBonus(x,y)--×Ô»ú»îÊ¹ÓÃ
+function item:EndChipBonus(x,y)--è‡ªæœºæ´»ä½¿ç”¨
 end
 
 ------------------------------------------
@@ -469,7 +469,7 @@ function item.oldPlayerInit()
 	lstg.var.init_player_data=true
 end
 
-function item.PlayerInit()--×Ô»ú»îÊ¹ÓÃ
+function item.PlayerInit()--è‡ªæœºæ´»ä½¿ç”¨
 	lstg.var.power=400
 	lstg.var.lifeleft=0
 	lstg.var.bomb=0
@@ -499,7 +499,7 @@ function item.oldPlayerReinit()
 	lstg.var.score=lstg.var.coun_num
 end
 
-function item.PlayerReinit()--×Ô»ú»îÊ¹ÓÃ
+function item.PlayerReinit()--è‡ªæœºæ´»ä½¿ç”¨
 	lstg.var.power=400
 	lstg.var.lifeleft=0
 	lstg.var.bomb=0
@@ -518,7 +518,7 @@ function item.PlayerReinit()--×Ô»ú»îÊ¹ÓÃ
 end
 
 ------------------------------------------
---HZCµÄÊÕµãÏµÍ³
+--HZCçš„æ”¶ç‚¹ç³»ç»Ÿ
 function item.playercollect(n)
 	New(tasker,function()
 		local z=0
@@ -618,7 +618,7 @@ function item.oldPointRateFunc(var)
 	return r
 end
 
-function item.PointRateFunc(var,p)--×Ô»ú»îÊ¹ÓÃ
+function item.PointRateFunc(var,p)--è‡ªæœºæ´»ä½¿ç”¨
 	if p then
 		local slot=GetCurrentPlayerSlot(p)
 		local expsy=p.expsy*p.psyuse
@@ -631,50 +631,50 @@ function item.PointRateFunc(var,p)--×Ô»ú»îÊ¹ÓÃ
 end
 
 ------------------------------------------
---×Ô»ú»îÊ¹ÓÃ
-function item.PlayerDeath(p)--Íæ¼Ò´¯ğê
+--è‡ªæœºæ´»ä½¿ç”¨
+function item.PlayerDeath(p)--ç©å®¶ç–®ç—
 	p.protect=360
 	lstg.var.lifeleft=lstg.var.lifeleft-1
 end
 
-function item.PlayerBreak(p)--Íæ¼ÒÖĞµ¯ºó³¬¹ı¾öËÀÅĞ¶¨
+function item.PlayerBreak(p)--ç©å®¶ä¸­å¼¹åè¶…è¿‡å†³æ­»åˆ¤å®š
 	local slot=GetCurrentPlayerSlot(p)
 	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
 	ex.ClearBonus(true,false)
 	
 	local shoulduse=p.psyuse*(2^p._breaktimes)
 	if lstg.var.psychic[slot]>=p.psyuse then
-		--»¹ÓĞÁéÁ¦
+		--è¿˜æœ‰çµåŠ›
 		p.death=0
-		--ÎŞµĞÊ±¼äÖ»ÄÜÎªÕûÊı£¬·ñÕıĞĞ×ßÍ¼ÉÁË¸ÓĞÎÊÌâ
-		--ÎŞµĞÊ±¼ä×îºÃ²»Ğ¡ÓÚ0
-		p.protect=int(360*max(0,(min(lstg.var.psychic[slot],shoulduse)/shoulduse)))--ÏÈÅĞ¶ÏÎŞµĞÊ±¼ä
-		Getpsy(p,-shoulduse)--ÔÙ¿Û³ı
+		--æ— æ•Œæ—¶é—´åªèƒ½ä¸ºæ•´æ•°ï¼Œå¦æ­£è¡Œèµ°å›¾é—ªçƒæœ‰é—®é¢˜
+		--æ— æ•Œæ—¶é—´æœ€å¥½ä¸å°äº0
+		p.protect=int(360*max(0,(min(lstg.var.psychic[slot],shoulduse)/shoulduse)))--å…ˆåˆ¤æ–­æ— æ•Œæ—¶é—´
+		Getpsy(p,-shoulduse)--å†æ‰£é™¤
 	else
-		--ÁéÁ¦²»×ã
+		--çµåŠ›ä¸è¶³
 		Clearpsy(p)
 		item.PlayerDeath(p)
 	end
 end
 
-function item.PlayerPsy(p)--Íæ¼ÒÁé»÷
+function item.PlayerPsy(p)--ç©å®¶çµå‡»
 	local slot=GetCurrentPlayerSlot(p)
 	if lstg.var.sc_bonus then lstg.var.sc_bonus=0 end
 	ex.ClearBonus(false,true)
-	Getpsy(p,-p.psyuse)--Áé»÷ÏûºÄ
+	Getpsy(p,-p.psyuse)--çµå‡»æ¶ˆè€—
 end
 
-function item.PlayerCanPsy(p)--ÅĞ¶ÏÍæ¼ÒÊÇ·ñ¿ÉÒÔÁé»÷
+function item.PlayerCanPsy(p)--åˆ¤æ–­ç©å®¶æ˜¯å¦å¯ä»¥çµå‡»
 	return lstg.var.psychic[GetCurrentPlayerSlot(p)]>=p.psyuse
 end
 
-function item.PlayerStruck(p)--ÖĞµ¯
-	--Ö»ÒªÖĞµ¯¾ÍÇå¿ÕÒç³öÖµ
+function item.PlayerStruck(p)--ä¸­å¼¹
+	--åªè¦ä¸­å¼¹å°±æ¸…ç©ºæº¢å‡ºå€¼
 	local slot=GetCurrentPlayerSlot(p)
 	lstg.var.expsychic[slot]=0
 end
 
-function item.PlayerGraze(p)--×Ô»ú»î²Áµ¯
+function item.PlayerGraze(p)--è‡ªæœºæ´»æ“¦å¼¹
 	local slot=GetCurrentPlayerSlot(p)
 	lstg.var.grazes[slot]=lstg.var.grazes[slot]+1
 	lstg.var.graze=lstg.var.graze+1
