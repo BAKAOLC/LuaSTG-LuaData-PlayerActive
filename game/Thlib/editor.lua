@@ -652,10 +652,75 @@ function LoadMusicRecord(name)
 end
 
 ----------------------------------------
+--拖影特效
+--？细节：现有的拖影是通过HGE粒子特效来实现的，无法更改混合模式和颜色，无法更改大小和拖影长度
+
+function MakeSmear(obj,length,interval,blend,color,size)
+	if IsValid(obj) and ImageList[obj.img] then
+		length = length or 10
+		interval = interval or 1
+		blend = blend or ''
+		color = color or {255,255,255,255,0,255,255,255}
+		--size = size or {1,0}
+		New(smear,obj,length,interval,blend,color,size)
+	else
+		error("Invalid object or not a object with image")
+	end
+end
+
+smear = Class(object)
+smear.cache = {}
+smear.func = function(img)--修改by OLC，修复了疯狂重复加载的问题
+	if lstg.tmpvar.smearcache == nil then lstg.tmpvar.smearcache = {} end
+	if not lstg.tmpvar.smearcache[img] then
+		smear.cache[img] = img.."_smear_psi"
+		lstg.tmpvar.smearcache[img] = img.."_smear_psi"
+		LoadPS(img.."_smear_psi","THlib\\bullet\\smear.psi",img)
+	end
+	return lstg.tmpvar.smearcache[img]
+end
+function smear:init(obj,interval)
+	self.master = obj
+	self.emission = 60/(interval or 1)
+	self.layer = obj.layer - 1
+	self.bound = false
+end
+function smear:frame()
+	if self.notframe then return end
+	if not IsValid(self.master) then Kill(self) return end
+	self.x = self.master.x
+	self.y = self.master.y
+	self.rot = self.master.rot
+	if self.master.hide or not self.master.img then
+		self.hide = true
+	else
+		self.hide = false
+		self.img = smear.func(self.master.img)
+		ParticleSetEmission(self,self.emission)
+	end
+end
+function smear:kill()
+	self.status = 'normal'
+	self.notframe = true
+	New(tasker, function()
+		local m = ParticleGetEmission(self)
+		while true do
+			if m < 0 then break end
+			ParticleSetEmission(self,m)
+			m = m - 5
+			task.Wait(1)
+		end
+		task.Wait(30)
+		Del(self)
+	end)
+end
+
+----------------------------------------
+--bullet ex系统
 --阿基米德螺线 powered by 二要
 --？细节：现有版本的编辑器不再提供该功能
 
-Include'THlib\\Archimedes.lua'
+Include'THlib\\bulletex\\Archimedes.lua'
 
 archiexpand=Class(bullet)
 function archiexpand:init(imgclass,color,destroyable,navi,auto,center,radius,angle,omiga,deltar)
@@ -679,6 +744,46 @@ end
 function archirotate:frame()
 	bullet.frame(self)
 	archimedes.rotation.frame(self)
+end
+
+----------------------------------------
+--bullet ex系统
+--bullet ex
+--毒瘤一个，有待解决
+
+Include("THlib\\bulletex\\Queue.lua")
+Include("THlib\\bulletex\\Heap.lua")
+Include("THlib\\bulletex\\List.lua")
+Include("THlib\\bulletex\\Array.lua")
+Include("THlib\\bulletex\\Class.lua")
+Include("THlib\\bulletex\\BulletEx.lua")
+
+RenderObject=Class(object)
+function RenderObject:init(parent,image,x,y,rot,h,v,layer,tf)
+	self.img = image
+	self.x,self.y = x,y
+	self.rot=rot
+	self.hscale,self.vscale = h,v
+	self.task = {}
+	self.master = parent
+	self.layer = layer
+	tf(self)
+end
+function RenderObject:frame()
+	if not IsValid(self.master) and stage.current_stage ~= self.master then
+		Del(self)
+		return
+	end
+	task.Do(self)
+end
+function RenderObject:render()
+	if self._blend and self._a and self._r and self._g and self._b then
+		SetImgState(self,self._blend,self._a,self._r,self._g,self._b)
+	end
+	DefaultRenderFunc(self)
+	if self._blend and self._a and self._r and self._g and self._b then
+		SetImgState(self,'',255,255,255,255)
+	end
 end
 
 ----------------------------------------
@@ -732,107 +837,5 @@ function ClearRebound()
 	rebounder.list = {}
 	rebounder.size = 0
 	rebounding.ClearRebound()
-end
-
-----------------------------------------
---拖影特效
---？细节：现有的拖影是通过HGE粒子特效来实现的，无法更改混合模式和颜色，无法更改大小和拖影长度
-
-function MakeSmear(obj,length,interval,blend,color,size)
-	if IsValid(obj) and ImageList[obj.img] then
-		length = length or 10
-		interval = interval or 1
-		blend = blend or ''
-		color = color or {255,255,255,255,0,255,255,255}
-		--size = size or {1,0}
-		New(smear,obj,length,interval,blend,color,size)
-	else
-		error("Invalid object or not a object with image")
-	end
-end
-
-smear = Class(object)
-smear.cache = {}
-smear.func = function(img)--修改by OLC，修复了疯狂重复加载的问题
-	if lstg.tmpvar.smearcache == nil then lstg.tmpvar.smearcache = {} end
-	if not lstg.tmpvar.smearcache[img] then
-		smear.cache[img] = img.."_smear_psi"
-		lstg.tmpvar.smearcache[img] = img.."_smear_psi"
-		LoadPS(img.."_smear_psi","THlib\\smear.psi",img)
-	end
-	return lstg.tmpvar.smearcache[img]
-end
-function smear:init(obj,interval)
-	self.master = obj
-	self.emission = 60/(interval or 1)
-	self.layer = obj.layer - 1
-	self.bound = false
-end
-function smear:frame()
-	if self.notframe then return end
-	if not IsValid(self.master) then Kill(self) return end
-	self.x = self.master.x
-	self.y = self.master.y
-	self.rot = self.master.rot
-	if self.master.hide or not self.master.img then
-		self.hide = true
-	else
-		self.hide = false
-		self.img = smear.func(self.master.img)
-		ParticleSetEmission(self,self.emission)
-	end
-end
-function smear:kill()
-	self.status = 'normal'
-	self.notframe = true
-	New(tasker, function()
-		local m = ParticleGetEmission(self)
-		while true do
-			if m < 0 then break end
-			ParticleSetEmission(self,m)
-			m = m - 5
-			task.Wait(1)
-		end
-		task.Wait(30)
-		Del(self)
-	end)
-end
-
-----------------------------------------
---bullet ex系统
-
-Include("THlib\\Queue.lua")
-Include("THlib\\Heap.lua")
-Include("THlib\\List.lua")
-Include("THlib\\Array.lua")
-Include("THlib\\Class.lua")
-Include("THlib\\BulletEx.lua")
-
-RenderObject=Class(object)
-function RenderObject:init(parent,image,x,y,rot,h,v,layer,tf)
-	self.img = image
-	self.x,self.y = x,y
-	self.rot=rot
-	self.hscale,self.vscale = h,v
-	self.task = {}
-	self.master = parent
-	self.layer = layer
-	tf(self)
-end
-function RenderObject:frame()
-	if not IsValid(self.master) and stage.current_stage ~= self.master then
-		Del(self)
-		return
-	end
-	task.Do(self)
-end
-function RenderObject:render()
-	if self._blend and self._a and self._r and self._g and self._b then
-		SetImgState(self,self._blend,self._a,self._r,self._g,self._b)
-	end
-	DefaultRenderFunc(self)
-	if self._blend and self._a and self._r and self._g and self._b then
-		SetImgState(self,'',255,255,255,255)
-	end
 end
 

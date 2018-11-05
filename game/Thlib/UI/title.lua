@@ -1,15 +1,55 @@
+--======================================
+--标题菜单
+--======================================
+
+----------------------------------------
+--logo画面
+
 stage_init=stage.New('init',true,true)
 function stage_init:init()
-	New(mask_fader,'open')
 	jstg.enable_player=true
 	jstg.worldcount=1 --do not render twice
+	task.New(self,function()
+		task.Wait(30)
+		New(luastg_logo)
+		task.Wait(150)
+		New(mask_fader,'close')
+		task.Wait(60)
+		stage.Set('none', 'menu')
+	end)
 end
 function stage_init:frame()
-	if --[[KeyIsDown'shoot' and ]]self.timer>30 then stage.Set('none', 'menu') end
+	task.Do(self)
 end
 function stage_init:render()
-	ui.DrawMenuBG()
 end
+
+luastg_logo=Class(object)
+function luastg_logo:init()
+	LoadImageFromFile('_luastg_logo','THlib\\ui\\luastg_logo.jpg')
+	self.x,self.y=screen.width/2,screen.height/2
+	self.bound=false
+	self.img='_luastg_logo'
+	self.ap=0
+	task.New(self,function()
+		for i=1,60 do
+			self.ap=255*(i/60)
+			task.Wait(1)
+		end
+	end)
+end
+function luastg_logo:frame()
+	task.Do(self)
+end
+function luastg_logo:render()
+	SetViewMode('ui')
+	SetImageState(self.img,'',Color(self.ap,255,255,255))
+	Render(self.img,self.x,self.y,0,0.2)
+	SetViewMode('world')
+end
+
+----------------------------------------
+--主菜单
 
 stage_menu=stage.New('menu',false,true)
 
@@ -29,7 +69,6 @@ function stage_menu:init()
 	local p2ok=1
 	jstg.enable_player=true
 	jstg.worldcount=1 --do not render twice
-	if _title_flag==nil then _title_flag=true else New(mask_fader,'open') end
 	--
 	local function ExitGame()
 	task.New(stage_menu,function()
@@ -47,11 +86,11 @@ function stage_menu:init()
 	if _allow_sc_practice then table.insert(menu_items,{'Spell Practice',function() practice='spell' menu.FlyIn(menu_sc_pr,'right') menu.FlyOut(menu_title,'left') end}) end
 	table.insert(menu_items,{'View Replay',function()
 	replay_loader.Refresh(menu_replay_loader)
-		menu.FadeIn(menu_replay_loader,'right')
-		menu.FadeOut(menu_title,'left')
+		menu.FlyIn(menu_replay_loader,'right')
+		menu.FlyOut(menu_title,'left')
 	end})
 	local net1
-
+	
 	net1={'Network',function () 
 		if jstg.network.status>1 then
 			jstg.CreateConnect(0)
@@ -66,7 +105,7 @@ function stage_menu:init()
 	end
 	jstg.nettitle=net1
 	table.insert(menu_items,net1)
-
+	
 	table.insert(menu_items,{'Exit Game',ExitGame})
 	table.insert(menu_items,{'exit',function() if menu_title.pos==#menu_title.text then ExitGame() else menu_title.pos=#menu_title.text end end})
 	menu_title=New(simple_menu,'',menu_items)
@@ -159,9 +198,8 @@ function stage_menu:init()
 		for i=1,60 do SetBGMVolume('menu',1-i/60) task.Wait() end
 			end)
 			task.New(stage_menu,function()
-				task.Wait(30)
 				New(mask_fader,'close')
-				task.Wait(30)
+				task.Wait(60)
 				if practice=='stage' then
 					RunSystem("on_game_start")
 					stage.group.PracticeStart(last_menu.stage_name[last_menu.pos])
@@ -188,9 +226,8 @@ function stage_menu:init()
 					for i=1,60 do SetBGMVolume('menu',1-i/60) task.Wait() end
 				end)
 				task.New(stage_menu,function()
-					task.Wait(30)
 					New(mask_fader,'close')
-					task.Wait(30)
+					task.Wait(60)
 					if practice=='stage' then
 						RunSystem("on_game_start",last_menu.stage_name[last_menu.pos])
 						stage.group.PracticeStart(last_menu.stage_name[last_menu.pos])
@@ -233,9 +270,8 @@ function stage_menu:init()
 					for i=1,60 do SetBGMVolume('menu',1-i/60) task.Wait() end
 				end)
 				task.New(stage_menu,function()
-					task.Wait(30)
 					New(mask_fader,'close')
-					task.Wait(30)
+					task.Wait(60)
 					
 					if practice=='stage' then
 						RunSystem("on_game_start",last_menu.stage_name[last_menu.pos])
@@ -342,14 +378,16 @@ function stage_menu:init()
 			menu.FlyIn(menu_title,'left')
 			menu.FlyOut(menu_replay_loader,'right')
 		else
-	  task.New(stage_menu,function()
-		for i=1,60 do SetBGMVolume('menu',1-i/60) task.Wait() end
+			task.New(stage_menu,function()
+				for i=1,60 do
+					SetBGMVolume('menu',1-i/60)
+					task.Wait(1)
+				end
 			end)
 			task.New(stage_menu,function()
 				menu.FlyOut(menu_replay_loader,'left')
-				task.Wait(30)
 				New(mask_fader,'close')
-				task.Wait(30)
+				task.Wait(60)
 				Print(filename,stageName)
 				stage.Set('load', filename, stageName)
 			end)
@@ -364,8 +402,6 @@ function stage_menu:init()
 		self.pos_changed=ui.menu.shake_time
 	end
 	
-	LoadMusic('menu',music_list.menu[1],music_list.menu[2],music_list.menu[3])
-	PlayMusic('menu')
 	jstg.menu_network=menu_network
 	jstg.menu_title=menu_title
 	
@@ -375,26 +411,46 @@ function stage_menu:init()
 			menu_replay_saver=New(replay_saver,self.save_replay,self.finish,function()
 				menu.FlyOut(menu_replay_saver,'right')
 				menu.FlyIn(menu_sc_pr,'left')
-				task.New(menu_sc_pr,sc_init)
+				task.New(menu_sc_pr,function()
+					sc_init()
+				end)
 			end)
 			menu.FlyIn(menu_replay_saver,'left')
 		else
 			menu.FlyIn(menu_sc_pr,'left')
-			task.New(menu_sc_pr,sc_init)
+			task.New(menu_sc_pr,function()
+				sc_init()
+			end)
 		end
 	else
 		if self.save_replay then
 			menu_replay_saver=New(replay_saver,self.save_replay,self.finish,function()
 				menu.FlyOut(menu_replay_saver,'right')
-				task.New(stage_menu,function() task.Wait(30) task.New(stage_menu,task_menu_init) end)
+				task.New(stage_menu,function()
+					task.Wait(30)
+					task.New(stage_menu,function()
+						task_menu_init()
+					end)
+				end)
 			end)
 			menu.FlyIn(menu_replay_saver,'left')
 		else
-			task.New(stage_menu,task_menu_init)
+			task.New(stage_menu,function()
+				task_menu_init()
+			end)
 		end
 	end
+	
+	task.New(self,function()
+		New(mask_fader,'open')
+		task.Wait(1)--等待一帧防止进入主菜单会黑一下
+		LoadMusic('menu',music_list.menu[1],music_list.menu[2],music_list.menu[3])
+		PlayMusic('menu')
+	end)
 end
-
+function stage_menu:frame()
+	task.Do(self)
+end
 function stage_menu:render()
 	ui.DrawMenuBG()
 end

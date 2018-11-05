@@ -11,20 +11,46 @@ ext={}
 local extpath="Thlib\\ext\\"
 
 DoFile(extpath.."ext_pause_menu.lua")--暂停菜单和暂停菜单资源
+DoFile(extpath.."ext_switchmask.lua")--切关幕布
 DoFile(extpath.."ext_replay.lua")--CHU爷爷的replay系统以及切关函数重载
 DoFile(extpath.."ext_stage_group.lua")--关卡组
+--暂停模糊用
+LoadFX('texture_BoxBlur25','shader\\texture_BoxBlur25.fx')
+CreateRenderTarget('_pause_blur')
 
 ext.replayTicker=0--控制录像速度时有用
 ext.slowTicker=0--控制时缓的变量
 ext.time_slow_level={1, 2, 3, 4}--60/30/20/15 4个程度
+ext.sc_pr=false--判断是否处于符卡练习
+ext.rep_over=false--判断录像结束
+ext.pause_menu=nil--暂停菜单对象
+ext.switch_mask=ext.switchmask.New()--切关幕布对象
+ext.pause_menu_order=nil--选择的暂停菜单选项
+ext.pauseblur_radiu=0--暂停模糊大小
 
 function ext.ResetTicker()
 	ext.replayTicker=0
 	ext.slowTicker=0
 end
 
-function ext.GetPauseMenuOrder()
+function ext.SetPauseMenuType(_type)--设置暂停菜单类型--字符串
+	lstg.tmpvar.pause_menu_type=_type
+end
+function ext.GetPauseMenuType()--获得暂停菜单类型--字符串
+	return lstg.tmpvar.pause_menu_type
+end
+function ext.GetPauseMenu()--获得暂停菜单文字和渲染资源列表
+	return ext.pausemenu.order[lstg.tmpvar.pause_menu_type]
+end
+function ext.ClearPauseMenuType()--清空暂停菜单类型
+	lstg.tmpvar.pause_menu_type=nil
+end
+
+function ext.GetPauseMenuOrder()--获得暂停菜单广播的消息
 	return ext.pause_menu_order
+end
+function ext.PushPauseMenuOrder(str)--广播暂停菜单消息
+	ext.pause_menu_order=str
 end
 
 ----------------------------------------
@@ -135,25 +161,6 @@ function FrameFunc()
 		end
 		--按键弹出菜单
 		if (GetLastKey() == setting.keysys.menu or ext.pop_pause_menu) and not stage.current_stage.is_menu then
-			ext.pop_pause_menu = nil
-			ext.rep_over=false
-			PlaySound('pause', 0.5)
-			if not(ext.sc_pr) then
-			local _, bgm = EnumRes('bgm')
-				for _,v in pairs(bgm) do
-					if GetMusicState(v) ~= 'stopped' and v ~= 'deathmusic' then
-						PauseMusic(v)
-					end
-				end
-			end
-			--[=[
-			local sound, _ = EnumRes('snd')
-			for _,v in pairs(sound) do
-				if GetSoundState(v)~='stopped' and v ~= 'pause' then
-					PauseSound(v)
-				end
-			end
-			]=]
 			ext.pause_menu=ext.pausemenu.New()--创建暂停菜单
 		end
 	else
@@ -162,9 +169,15 @@ function FrameFunc()
 		jstg.GetInputEx(true)
 		
 		--暂停菜单逻辑
-		ext.pause_menu.frame(ext.pause_menu)
-		if ext.pause_menu.kill then ext.pause_menu=nil end
+		ext.pausemenu.frame(ext.pause_menu)
+		if ext.pause_menu.kill then
+			ext.pausemenu.del(ext.pause_menu)
+			ext.pause_menu=nil
+		end
 	end
+	--切关幕布逻辑
+	ext.switchmask.frame(ext.switch_mask)
+	--退出游戏逻辑
 	if lstg.quit_flag then
 		GameExit()
 	end
@@ -173,10 +186,10 @@ end
 
 function RenderFunc()
 	--！更改：只有关卡和object的渲染丢到了if里面，其他的正常每帧渲染
-	SetWorldFlag(1)
 	BeginScene()
+	SetWorldFlag(1)
 	BeforeRender()
-	if stage.current_stage.timer and stage.current_stage.timer > 1 and stage.next_stage == nil then
+	if stage.current_stage.timer and stage.current_stage.timer > 0 and stage.next_stage == nil then
 		stage.current_stage:render()
 		for i=1,#jstg.worlds do
 			jstg.SwitchWorld(i)
@@ -192,17 +205,25 @@ function RenderFunc()
 end
 
 function BeforeRender()
-	--震屏特效支持
 	SetViewMode'ui'
+	
+	--暂停模糊支持
+	if ext.pauseblur_radiu>0 then
+		PushRenderTarget('_pause_blur')
+	end
+	
+	--震屏特效支持
 	PushRenderTarget('_screen_shake')
+	
 	RenderClear(Color(255,0,0,0))
 	SetViewMode'world'
 end
 
 function AfterRender()
+	SetViewMode'ui'
+	
 	--震屏
 	PopRenderTarget('_screen_shake')
-	SetViewMode'ui'
 	PostEffect('_screen_shake','screen_transform','',{
 		dx=lstg.ScreenShakeTransForm.x,
 		dy=lstg.ScreenShakeTransForm.y,
@@ -212,11 +233,21 @@ function AfterRender()
 		vw=lstg.world.scrt*screen.scale+screen.dy,
 		scale=screen.scale,
 	})
+	
+	--暂停模糊
+	if ext.pauseblur_radiu>0 then
+		PopRenderTarget('_pause_blur')
+		PostEffect('_pause_blur','texture_BoxBlur25','',{radiu=ext.pauseblur_radiu})
+	end
+	
 	SetViewMode'world'
+	
+	--切关幕布渲染
+	ext.switchmask.render(ext.switch_mask)
 	
 	if ext.pause_menu then
 		--暂停菜单渲染
-		ext.pause_menu.render(ext.pause_menu)
+		ext.pausemenu.render(ext.pause_menu)
 	end
 	if _render_debug then
 		lstg.RenderDebug.RenderDrawcallTimer()--用于制作者检查是否有渲染函数调用过多的问题

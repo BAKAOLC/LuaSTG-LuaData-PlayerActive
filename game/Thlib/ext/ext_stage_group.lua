@@ -8,7 +8,8 @@
 stage.group={}
 stage.groups={}
 
-gamecontinueflag=false
+gamecontinueflag=false--记录游戏续关
+stage.continueflag=false--记录游戏续关--2
 local deathmusic='deathmusic'--疮痍曲
 
 function stage.group.New(title,stages,name,item_init,allow_practice,difficulty)
@@ -76,12 +77,20 @@ function stage.group.frame(self)
 		if ext.replay.IsReplay() then
 			ext.pop_pause_menu=true
 			ext.rep_over=true
-			lstg.tmpvar.pause_menu_text={'Replay Again','Return to Title',nil}
+			ext.SetPauseMenuType('replay-finish')
 		else
 			PlayMusic(deathmusic,0.8)
 			ext.pop_pause_menu=true
 			lstg.tmpvar.death = true
-			lstg.tmpvar.pause_menu_text={'Continue','Quit and Save Replay','Restart'}
+			if stage.continueflag==false then
+				if lstg.var.is_practice or Extramode then
+					ext.SetPauseMenuType('practice-over')
+				else
+					ext.SetPauseMenuType('game-over')
+				end
+			elseif stage.continueflag==true then
+				ext.SetPauseMenuType('continue-over')
+			end
 		end
 		lstg.var.lifeleft=0
 	end
@@ -89,6 +98,7 @@ function stage.group.frame(self)
 	if ext.GetPauseMenuOrder()=='Return to Title' then
 		lstg.var.timeslow=nil
 		stage.group.ReturnToTitle(false,0)
+		stage.continueflag=false--回主菜单清除续关flag
 	end
 	if ext.GetPauseMenuOrder()=='Replay Again' then
 		lstg.var.timeslow=nil
@@ -102,11 +112,14 @@ function stage.group.frame(self)
 		else
 			stage.group.Start(self.group)
 		end
+		stage.continueflag=false--重开清除续关flag
 	end
 	if ext.GetPauseMenuOrder()=='Continue' then
 		lstg.var.timeslow=nil
 		StopMusic(deathmusic)
 		if not Extramode then
+			gamecontinueflag=true
+			stage.continueflag=true--续命时续关为true
 			gamecontinueflag=true
 			if lstg.var.block_spell then
 				if lstg.var.is_practice then
@@ -137,10 +150,12 @@ function stage.group.frame(self)
 		else
 			stage.group.Start(self.group)
 			lstg.tmpvar.pause_menu_text=nil
+			--ex模式下不标记续关
 		end
 	end
 	if ext.GetPauseMenuOrder()=='Quit and Save Replay' then
 		stage.group.ReturnToTitle(true,0)
+		stage.continueflag=false--回主菜单清除续关flag
 		lstg.tmpvar.pause_menu_text=nil
 		lstg.tmpvar.death = true
 		lstg.var.timeslow=nil
@@ -154,6 +169,7 @@ function stage.group.frame(self)
 		end
 		lstg.tmpvar.pause_menu_text=nil
 		lstg.var.timeslow=nil
+		stage.continueflag=false--重开清除续关flag
 	end
 end
 
@@ -166,21 +182,23 @@ function stage.group.frame_sc_pr(self)
 		if ext.replay.IsReplay() then
 			ext.pop_pause_menu=true
 			ext.rep_over=true
-			lstg.tmpvar.pause_menu_text={'Replay Again','Return to Title',nil}
+			ext.SetPauseMenuType('replay-finish')
 		else
 			ext.pop_pause_menu=true
 			lstg.tmpvar.death = true
-			lstg.tmpvar.pause_menu_text={'Continue','Quit and Save Replay','Return to Title'}
+			ext.SetPauseMenuType('sc-over')
 		end
 		lstg.var.lifeleft=0
 	end
-	if ext.GetPauseMenuOrder()=='Give up and Retry' then
+	if ext.GetPauseMenuOrder()=='Give up and Retry' or ext.GetPauseMenuOrder()=='Restart' then--艹，这两个有区别？？？
 		stage.Restart()
 		lstg.tmpvar.pause_menu_text=nil
 		lstg.var.timeslow=nil
+		stage.continueflag=false--重开清除续关flag
 	end
 	if ext.GetPauseMenuOrder()=='Return to Title' then
 		stage.group.ReturnToTitle(false,0)
+		stage.continueflag=false--回主菜单清除续关flag
 		lstg.var.timeslow=nil
 	end
 	if ext.GetPauseMenuOrder()=='Replay Again' then
@@ -190,9 +208,11 @@ function stage.group.frame_sc_pr(self)
 	if ext.GetPauseMenuOrder()=='Continue' then
 		stage.Restart()
 		lstg.var.timeslow=nil
+		stage.continueflag=false--符卡练习没有续关概念，要清除一次
 	end
 	if ext.GetPauseMenuOrder()=='Quit and Save Replay' then
 		stage.group.ReturnToTitle(true,0)
+		stage.continueflag=false--回主菜单清除续关flag
 		lstg.tmpvar.pause_menu_text=nil
 		lstg.tmpvar.death = true
 		lstg.var.timeslow=nil
@@ -201,13 +221,13 @@ end
 
 function stage.group.render(self)
 	SetViewMode'ui'
-	RenderClear(Color(0x00000000))
+	RenderClear(Color(255,0,0,0))
 	ui.DrawFrame()
 	if lstg.var.init_player_data then
 		ui.DrawScore()
 	end
 	SetViewMode'world'
-	RenderClear(Color(0x00000000))
+	RenderClear(Color(255,0,0,0))
 end
 
 function stage.group.Start(group)
@@ -229,7 +249,7 @@ function stage.group.FinishStage()
 		if ext.replay.IsReplay() then
 			ext.rep_over=true
 			ext.pop_pause_menu=true
-			lstg.tmpvar.pause_menu_text={'Replay Again','Return to Title',nil}
+			ext.SetPauseMenuType('replay-finish')
 		else
 			if lstg.var.is_practice then
 				stage.group.ReturnToTitle(true,0)
@@ -258,7 +278,7 @@ function stage.group.FinishReplay()
 		if ext.replay.IsReplay() then
 			ext.rep_over=true
 			ext.pop_pause_menu=true
-			lstg.tmpvar.pause_menu_text={'Replay Again','Return to Title',nil}
+			ext.SetPauseMenuType('replay-finish')
 		end
 	else
 		if ext.replay.IsReplay() then

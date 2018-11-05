@@ -20,6 +20,7 @@ DoFile("lib\\Lstage.lua")--stage关卡系统
 DoFile("lib\\Ltext.lua")--文字渲染
 DoFile("lib\\Lscoredata.lua")--玩家存档
 DoFile("sp\\sp.lua")--OLC神的sp加强库
+DoFile("etc\\etc.lua")--自机活额外辅助库
 
 ----------------------------------------
 --用户全局变量
@@ -236,10 +237,10 @@ function DoFrame()--行为帧动作(和游戏循环的帧动作分开)
 	end
 end
 
-function BeforeRender()
+function BeforeRender()--于ext中重载
 end
 
-function AfterRender()
+function AfterRender()--于ext中重载
 end
 
 function GameExit()
@@ -260,13 +261,13 @@ function GameInit()
 	SetResourceStatus'stage'
 end
 
-function FrameFunc()
+function FrameFunc()--于ext中重载
 	DoFrame(true,true)
 	if lstg.quit_flag then GameExit() end
 	return lstg.quit_flag
 end
 
-function RenderFunc()
+function RenderFunc()--于ext中重载
 	if stage.current_stage.timer>1 and stage.next_stage==nil then
 		BeginScene()
 		BeforeRender()
@@ -277,7 +278,7 @@ function RenderFunc()
 	end
 end
 
-function FocusLoseFunc()
+function FocusLoseFunc()--于ext中重载
 
 end
 

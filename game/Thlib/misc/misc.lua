@@ -242,25 +242,25 @@ function shutter:render()
 end
 
 mask_fader=Class(object)
-function mask_fader:init(mode)
-	self.layer=LAYER_TOP+100
+function mask_fader:init(mode,t)
 	self.group=GROUP_GHOST
-	self.open=(mode=='open')
+	self.t=t or 30
+	task.New(self,function()
+		task.Wait(1)
+		if mode=='open' then
+			ext.switchmask.open(self,self.t-1)
+		else
+			ext.switchmask.close(self,self.t-1)
+		end
+	end)
 end
 function mask_fader:frame()
-	if self.timer==30 then
+	task.Do(self)
+	if self.timer==self.t then
 		Del(self)
 	end
 end
-function mask_fader:render()
-	SetViewMode'ui'
-	if self.open then
-		SetImageState('white','',Color(255-self.timer*8.5,0,0,0))
-	else
-		SetImageState('white','',Color(self.timer*8.5,0,0,0))
-	end
-	RenderRect('white',0,screen.width,0,screen.height)
-end
+
 
 --维持粒子特效直到消失
 --！警告：使用了改类功能
@@ -372,6 +372,3 @@ SetImageState('_sub_white','mul+sub',
 	Color(255,0,0,0),
 	Color(255,0,0,0)
 )
---不再使用
---LoadImage('boss_aura','misc',0,128,128,128)
---SetImageState('boss_aura','mul+add',Color(0x80FFFFFF))

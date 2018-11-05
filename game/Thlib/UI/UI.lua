@@ -1,16 +1,15 @@
-Include'THlib\\ui\\uiconfig.lua'
-Include'THlib\\ui\\font.lua'
-Include'THlib\\ui\\title.lua'
-Include'THlib\\ui\\sc_pr.lua'
-ui={}
+--======================================
+--UI
+--======================================
+
+----------------------------------------
+--加载资源
 
 LoadTexture('boss_ui','THlib\\UI\\boss_ui.png')
 LoadImage('boss_spell_name_bg','boss_ui',0,0,256,36)
 SetImageCenter('boss_spell_name_bg',256,0)
-
 LoadImage('boss_pointer','boss_ui',0,64,48,16)
 SetImageCenter('boss_pointer',24,0)
-
 LoadImage('boss_sc_left','boss_ui',64,64,32,32)
 SetImageState('boss_sc_left','',Color(0xFF80FF80))
 
@@ -41,9 +40,6 @@ SetImageCenter('hint.score',0,10)
 SetImageCenter('hint.Pnumber',0,10)
 SetImageCenter('hint.Bnumber',0,10)
 
-LoadTexture('line','THlib\\ui\\line.png',true)
-LoadImageGroup('line_','line',0,0,180,8,1,7,0,0)
-
 LoadTexture('ui_rank','THlib\\ui\\rank.png')
 LoadImage('rank_Easy','ui_rank',0,0,144,32)
 LoadImage('rank_Normal','ui_rank',0,32,144,32)
@@ -52,11 +48,23 @@ LoadImage('rank_Lunatic','ui_rank',0,96,144,32)
 LoadImage('rank_Extra','ui_rank',0,128,144,32)
 
 --自机活使用
+--系统槽
 LoadTexture('pa_psybar','THlib\\ui\\ui_psybar.png',false)
 LoadImageGroup('pa_psybar_','pa_psybar',0,0,90,900,3,1,0,0)
+--world阴影
 LoadTexture('pa_world_back','THlib\\ui\\pa_world_back.png',false)
 LoadImageGroup('pa_world_back_','pa_world_back',0,0,32,480,3,1,0,0)
+--空白地图
 LoadImageFromFile('pa_blank_map','THlib\\ui\\blankmap.png')
+
+----------------------------------------
+--ui
+
+ui={}
+
+Include'THlib\\ui\\font.lua'
+Include'THlib\\ui\\title.lua'
+Include'THlib\\ui\\sc_pr.lua'
 
 ui.menu={
 	font_size=0.625,
@@ -369,28 +377,26 @@ end
 
 function ResetUI()--自机活使用
 	if setting.resx>setting.resy then
-		--LoadImageFromFile('ui_bg','THlib\\ui\\ui_bg_pa1.png')
-		LoadImageFromFile('ui_bg_big','THlib\\ui\\ui_bg_big1.png')
+		LoadImageFromFile('ui_bg_big','THlib\\ui\\ui_bg_big.png')
 		LoadImageFromFile('menu_bg','THlib\\ui\\menu_bg.png')
 		
 		function ui.DrawFrame()
-			if CheckRes('img','image:UI_img') then
-				Render('image:UI_img',320,240)
-			else
-				Render('ui_bg_big',427,240,0,480/1080)
-				local w=lstg.world
-				RenderRect('pa_world_back_1',w.scrl-32,w.scrl,0,480)
-				RenderRect('pa_world_back_2',w.scrl,w.scrr,0,480)
-				RenderRect('pa_world_back_3',w.scrr,w.scrr+32,0,480)
-			end
+			SetViewMode'ui'
+			Render('ui_bg_big',427,240,0,480/1080)
+			local w=lstg.world
+			RenderRect('pa_world_back_1',w.scrl-32,w.scrl,0,480)
+			RenderRect('pa_world_back_2',w.scrl,w.scrr,0,480)
+			RenderRect('pa_world_back_3',w.scrr,w.scrr+32,0,480)
 			SetFontState('menu','',Color(0xFFFFFFFF))
 			RenderText('menu',string.format('%.1ffps',GetFPS()),screen.width-4,1,0.25,'right','bottom')
+			SetViewMode'world'
 		end
 		function ui.DrawMenuBG()
 			SetViewMode'ui'
 			Render('menu_bg',screen.width/2,240,0,1.5)
 			SetFontState('menu','',Color(0xFFFFFFFF))
 			RenderText('menu',string.format('%.1ffps',GetFPS()),screen.width-4,1,0.25,'right','bottom')
+			SetViewMode'world'
 		end
 		function ui.DrawScore()
 			local w=lstg.world
@@ -609,11 +615,7 @@ function ResetUI()--自机活使用
 		end
 	else
 		LoadImageFromFile('ui_bg2','THlib\\ui\\ui_bg_2.png')
-		LoadImageFromFile('ui_bg','THlib\\ui\\ui_bg.png')
-		LoadImageFromFile('logo','THlib\\ui\\logo.png')
-		SetImageCenter('logo',0,0)
 		LoadImageFromFile('menu_bg2','THlib\\ui\\menu_bg_2.png')
-		LoadImageFromFile('menu_bg','THlib\\ui\\menu_bg.png')
 		function ui.DrawFrame()
 			Render('ui_bg2',198,264)
 		end
