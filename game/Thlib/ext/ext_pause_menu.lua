@@ -298,22 +298,25 @@ function ext.pausemenu.render(self)
 	SetImageState('pause_menu_circle','mul+add',Color(self.imgcolor[1],self.imgcolor[2],self.imgcolor[3],self.imgcolor[4]))
 	Render('pause_menu_circle',self.imgx,self.imgy,self.rot,0.52,0.52)
 	do--渲染标题
-		if self.titletype=='game-pause' or self.titletype=='continue-pause' then--暂停
-			SetImageState('pause_menu_gamepause','',Color(self.imgcolor[1],255,255,255))
-			Render('pause_menu_gamepause',self.imgx+120,self.imgy+4*sin(2*self.timer),0,0.5)
-		elseif self.titletype=='replay-pause' then--录像播放暂停
-			SetImageState('pause_menu_replaypause','',Color(self.imgcolor[1],255,255,255))
-			Render('pause_menu_replaypause',self.imgx+120,self.imgy+4*sin(2*self.timer),0,0.5)
-		elseif self.titletype=='game-over' or self.titletype=='continue-over' or self.titletype=='sc-over' or self.titletype=='practice-over' then--疮痍
-			SetImageState('pause_menu_gameover','',Color(self.imgcolor[1],255,255,255))
-			Render('pause_menu_gameover',self.imgx+120,self.imgy+4*sin(2*self.timer),0,0.5)
-		elseif self.titletype=='replay-finish' then--录像播放完
-			SetImageState('pause_menu_replayfinish','',Color(self.imgcolor[1],255,255,255))
-			Render('pause_menu_replayfinish',self.imgx+120,self.imgy+4*sin(2*self.timer),0,0.5)
-		elseif self.titletype=='sc-finish' then--符卡收取
-			SetImageState('pause_menu_scfinish','',Color(self.imgcolor[1],255,255,255))
-			Render('pause_menu_scfinish',self.imgx+120,self.imgy+4*sin(2*self.timer),0,0.5)
-		end
+		local titlelist={
+			--暂停
+			['game-pause']='pause_menu_gamepause',
+			['continue-pause']='pause_menu_gamepause',
+			--录像播放暂停
+			['replay-pause']='pause_menu_replaypause',
+			--疮痍
+			['game-over']='pause_menu_gameover',
+			['continue-over']='pause_menu_gameover',
+			['sc-over']='pause_menu_gameover',
+			['practice-over']='pause_menu_gameover',
+			--录像播放完
+			['replay-finish']='pause_menu_replayfinish',
+			--符卡收取
+			['sc-finish']='pause_menu_scfinish',
+		}
+		local img=titlelist[self.titletype]
+		SetImageState(img,'',Color(self.imgcolor[1],255,255,255))
+		Render(img,self.imgx+120,self.imgy+4*sin(2*self.timer),0,0.5)
 	end
 	do--渲染选项
 		local textlist=self.menutext

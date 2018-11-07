@@ -53,6 +53,17 @@ function marisa_player:init(slot)
 		{95,90,85,90},
 		{95,90,90,85}
 	}
+	self.Missile = function(idx)
+		PlaySound('msl', 0.2)
+		for _, i in ipairs(idx) do
+			if self.sp[i] and self.sp[i][3] > 0.5 then
+				New(marisa_missile, 'marisa_missile',
+						self.supportx + self.sp[i][1],
+						self.supporty + self.sp[i][2],
+						16, 90, 1.4)
+			end
+		end
+	end
 end
 
 function marisa_player:frame()
@@ -69,38 +80,23 @@ if self.nextspell<=0 then
 	end
 	local power=int(lstg.var.power/100)
 	if self.slow==1 then
-		if power<=2 then
-			if self.timer%16==0 then
-				PlaySound('msl',0.2)
-				for i=1,4 do if self.sp[i] and self.sp[i][3]>0.5 then
-					New(marisa_missile,'marisa_missile',self.supportx+self.sp[i][1],self.supporty+self.sp[i][2],16,90,1.4)
-				end end
+		if power <= 2 then
+			if self.timer % 16 == 0 then
+				self.Missile({ 1, 2, 3, 4 })
 			end
-		elseif power==3 then
-			if self.timer%16==0 then
-				PlaySound('msl',0.2)
-				for i=1,3,2 do if self.sp[i] and self.sp[i][3]>0.5 then
-					New(marisa_missile,'marisa_missile',self.supportx+self.sp[i][1],self.supporty+self.sp[i][2],16,90,1.4)
-				end end
+		elseif power == 3 then
+			if self.timer % 16 == 0 then
+				self.Missile({ 1, 3 })
 			end
-			if self.timer%16==8 then
-				PlaySound('msl',0.2)
-				for i=2,2 do if self.sp[i] and self.sp[i][3]>0.5 then
-					New(marisa_missile,'marisa_missile',self.supportx+self.sp[i][1],self.supporty+self.sp[i][2],16,90,1.4)
-				end end
+			if self.timer % 16 == 8 then
+				self.Missile({ 2 })
 			end
 		else
-			if self.timer%16==0 then
-				PlaySound('msl',0.2)
-				for i=1,4,3 do if self.sp[i] and self.sp[i][3]>0.5 then
-					New(marisa_missile,'marisa_missile',self.supportx+self.sp[i][1],self.supporty+self.sp[i][2],16,90,1.4)
-				end end
+			if self.timer % 16 == 0 then
+				self.Missile({ 1, 4 })
 			end
-			if self.timer%16==8 then
-				PlaySound('msl',0.2)
-				for i=2,3 do if self.sp[i] and self.sp[i][3]>0.5 then
-					New(marisa_missile,'marisa_missile',self.supportx+self.sp[i][1],self.supporty+self.sp[i][2],16,90,1.4)
-				end end
+			if self.timer % 16 == 8 then
+				self.Missile({ 2, 3 })
 			end
 		end
 	else
@@ -158,12 +154,9 @@ function marisa_player:spell()
 		New(player_spell_mask,0,0,255,30,210,30)
 		PlaySound('slash',1.0)
 		PlaySound('nep00',1.0)
-		New(marisa_sp_ef,0,self)
-		New(marisa_sp_ef,0,self)
-		New(marisa_sp_ef,120,self)
-		New(marisa_sp_ef,120,self)
-		New(marisa_sp_ef,240,self)
-		New(marisa_sp_ef,240,self)
+		for _,v in ipairs({0,0,120,120,240,240}) do
+			New(marisa_sp_ef,v,self)
+		end
 		misc.ShakeScreen(210,3)
 		New(tasker,function()
 			New(bullet_killer,self.x,self.y)
@@ -247,9 +240,9 @@ end
 marisa_bullet=Class(player_bullet_straight)
 
 function marisa_bullet:kill()
-	New(marisa_bullet_ef,self.x,self.y,self.rot,3)
-	New(marisa_bullet_ef,self.x,self.y,self.rot,4)
-	New(marisa_bullet_ef,self.x,self.y,self.rot,5)
+	for _,v in ipairs({3,4,5}) do
+		New(marisa_bullet_ef,self.x,self.y,self.rot,v)
+	end
 end
 
 marisa_missile=Class(player_bullet_straight)
@@ -415,44 +408,62 @@ function IsInLaser(x0,y0,a,unit,w)
 end
 
 function CreateLaser(x,y,a,w,t,c,offset)
-	local width=w/2
-	local n=int(offset/256)
-	local length=t%256
-	local endl=int(offset-n*256)
-	for i=1,n do
-		RenderTexture('MarisaLaser','mul+add',
-				{x+(length+256*(i-1))*cos(a)-width*sin(a),y+(length+256*(i-1))*sin(a)+width*cos(a),0.5,0,         0,c},
-				{x+256*i*cos(a)-width*sin(a),             y+256*i*sin(a)+width*cos(a),             0.5,256-length,0,c},
-				{x+256*i*cos(a)+width*sin(a),             y+256*i*sin(a)-width*cos(a),             0.5,256-length,16,c},
-				{x+(length+256*(i-1))*cos(a)+width*sin(a),y+(length+256*(i-1))*sin(a)-width*cos(a),0.5,0,         16,c}
-				)
-		RenderTexture('MarisaLaser','mul+add',
-				{x+256*(i-1)*cos(a)-width*sin(a),         y+256*(i-1)*sin(a)+width*cos(a),         0.5,256-length,0,c},
-				{x+(length+256*(i-1))*cos(a)-width*sin(a),y+(length+256*(i-1))*sin(a)+width*cos(a),0.5,256,       0,c},
-				{x+(length+256*(i-1))*cos(a)+width*sin(a),y+(length+256*(i-1))*sin(a)-width*cos(a),0.5,256,       16,c},
-				{x+256*(i-1)*cos(a)+width*sin(a),         y+256*(i-1)*sin(a)-width*cos(a),         0.5,256-length,16,c}
-				)
+	local width = w / 2
+	local n = int(offset / 256)
+	local length = t % 256
+	local endl = int(offset - n * 256)
+
+	local w_x = width * cos(a)
+	local w_y = width * sin(a)
+	local tex = 'MarisaLaser'
+	local blend = 'mul+add'
+
+	for i = 1, n do
+		local vx1 = x + (length + 256 * (i - 1)) * cos(a)
+		local vy1 = y + (length + 256 * (i - 1)) * sin(a)
+		local vx2 = x + 256 * i * cos(a)
+		local vy2 = y + 256 * i * sin(a)
+		local vx3 = x + 256 * (i - 1) * cos(a)
+		local vy3 = y + 256 * (i - 1) * sin(a)
+		RenderTexture(
+				tex, blend,
+				{ vx1 - w_y, vy1 + w_x, 0.5, 0, 0, c },
+				{ vx2 - w_y, vy2 + w_x, 0.5, 256 - length, 0, c },
+				{ vx2 + w_y, vy2 - w_x, 0.5, 256 - length, 16, c },
+				{ vx1 + w_y, vy1 - w_x, 0.5, 0, 16, c })
+		RenderTexture(
+				tex, blend,
+				{ vx3 - w_y, vy3 + w_x, 0.5, 256 - length, 0, c },
+				{ vx1 - w_y, vy1 + w_x, 0.5, 256, 0, c },
+				{ vx1 + w_y, vy1 - w_x, 0.5, 256, 16, c },
+				{ vx3 + w_y, vy3 - w_x, 0.5, 256 - length, 16, c })
 	end
 
-	if length<=endl then
-		RenderTexture('MarisaLaser','mul+add',
-				{x+(length+256*n)*cos(a)-width*sin(a),y+(length+256*n)*sin(a)+width*cos(a),0.5,0,   0,c},
-				{x+(256*n+endl)*cos(a)-width*sin(a),  y+(256*n+endl)*sin(a)+width*cos(a),  0.5,endl-length,0,c},
-				{x+(256*n+endl)*cos(a)+width*sin(a),  y+(256*n+endl)*sin(a)-width*cos(a),  0.5,endl-length,16,c},
-				{x+(length+256*n)*cos(a)+width*sin(a),y+(length+256*n)*sin(a)-width*cos(a),0.5,0,   16,c}
-				)
-		RenderTexture('MarisaLaser','mul+add',
-				{x+256*n*cos(a)-width*sin(a),         y+256*n*sin(a)+width*cos(a),         0.5,256-length,0,c},
-				{x+(length+256*n)*cos(a)-width*sin(a),y+(length+256*n)*sin(a)+width*cos(a),0.5,256,       0,c},
-				{x+(length+256*n)*cos(a)+width*sin(a),y+(length+256*n)*sin(a)-width*cos(a),0.5,256,       16,c},
-				{x+256*n*cos(a)+width*sin(a),         y+256*n*sin(a)-width*cos(a),         0.5,256-length,16,c}
-				)
+	local vx2 = x + (endl + 256 * n) * cos(a)
+	local vy2 = y + (endl + 256 * n) * sin(a)
+	local vx3 = x + 256 * n * cos(a)
+	local vy3 = y + 256 * n * sin(a)
+	if length <= endl then
+		local vx1 = x + (length + 256 * n) * cos(a)
+		local vy1 = y + (length + 256 * n) * sin(a)
+		RenderTexture(
+				tex, blend,
+				{ vx1 - w_y, vy1 + w_x, 0.5, 0, 0, c },
+				{ vx2 - w_y, vy2 + w_x, 0.5, endl - length, 0, c },
+				{ vx2 + w_y, vy2 - w_x, 0.5, endl - length, 16, c },
+				{ vx1 + w_y, vy1 - w_x, 0.5, 0, 16, c })
+		RenderTexture(
+				tex, blend,
+				{ vx3 - w_y, vy3 + w_x, 0.5, 256 - length, 0, c },
+				{ vx1 - w_y, vy1 + w_x, 0.5, 256, 0, c },
+				{ vx1 + w_y, vy1 - w_x, 0.5, 256, 16, c },
+				{ vx3 + w_y, vy3 - w_x, 0.5, 256 - length, 16, c })
 	else
-		RenderTexture('MarisaLaser','mul+add',
-				{x+256*n*cos(a)-width*sin(a),       y+256*n*sin(a)+width*cos(a),       0.5,256-length,0,c},
-				{x+(endl+256*n)*cos(a)-width*sin(a),y+(endl+256*n)*sin(a)+width*cos(a),0.5,endl+256-length,  0,c},
-				{x+(endl+256*n)*cos(a)+width*sin(a),y+(endl+256*n)*sin(a)-width*cos(a),0.5,endl+256-length,  16,c},
-				{x+256*n*cos(a)+width*sin(a),       y+256*n*sin(a)-width*cos(a),       0.5,256-length,16,c}
-				)
+		RenderTexture(
+				tex, blend,
+				{ vx3 - w_y, vy3 + w_x, 0.5, 256 - length, 0, c },
+				{ vx2 - w_y, vy2 + w_x, 0.5, endl + 256 - length, 0, c },
+				{ vx2 + w_y, vy2 - w_x, 0.5, endl + 256 - length, 16, c },
+				{ vx3 + w_y, vy3 - w_x, 0.5, 256 - length, 16, c })
 	end
 end
