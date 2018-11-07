@@ -6,69 +6,108 @@
 
 ----------------------------------------
 --map
-if not etc then etc={} end
+--if not etc then etc={} end
+
 etc.map={}
 
 function etc.map.New(existing)
 	local m={
-		SetCross=etc.map.SetCross,
-		SetCrossIndex=etc.map.SetCrossIndex,
-		Sniff=etc.map.Sniff,
+		['Copy']=etc.map.Copy,
+		['SetPoint']=etc.map.SetPoint,
+		['SetPointIndex']=etc.map.SetPointIndex,
+		['GetPoint']=etc.map.GetPoint,
+		['Sniff']=etc.map.Sniff,
+		['SetLine']=etc.map.SetLine,
+		['FindLine']=etc.map.FindLine,
+		['GetLine']=etc.map.GetLine,
+		['Sniff2']=etc.map.Sniff2,
+		['Sniff2L']=etc.map.Sniff2L,
+		['points']={},
+		['lines']={},
 	}
-	--复制表，而不是直接赋值
 	if type(existing)=='table' then
-		for k,v in pairs(existing) do
-			m[k]=v
-		end
+		m.points=existing.points
+		m.lines=existing.lines
 	end
 	return m
 end
 
-function etc.map:SetCross(cross_id,cross_x,cross_y,index_number)--新增节点（路口）
+function etc.map:Copy(existing)
+	if existing then
+		local m={
+			['points']={},
+			['lines']={},
+		}
+		for k,v in pairs(existing.points) do
+			m.points[k]=v
+		end
+		for k,v in pairs(existing.lines) do
+			m.lines[k]=v
+		end
+		return m
+	else
+		local m={
+			['points']={},
+			['lines']={},
+		}
+		for k,v in pairs(self.points) do
+			m.points[k]=v
+		end
+		for k,v in pairs(self.lines) do
+			m.lines[k]=v
+		end
+		return m
+	end
+end
+
+function etc.map:SetPoint(point_id,point_x,point_y,index_number)--新增节点
 	local tmp={}
 	local n=index_number or 4
 	for i=1,n do
 		tmp[i]=false
 	end
-	self[cross_id]={
-		cross=cross_id,
+	self.points[point_id]={
+		id=point_id,
 		index=tmp,
 		enter=false,
-		x=cross_x,
-		y=cross_y,
+		x=point_x,
+		y=point_y,
 	}
 end
 
-function etc.map:SetCrossIndex(cross_id,index_id,target_cross_id,entrance)--设置节点（路口）的连通
-	self[cross_id].index[index_id]={
-		cross=target_cross_id,
-		enter=entrance,
+function etc.map:SetPointIndex(point_id,index_id,target_point_id)--设置节点的连通
+	self.points[point_id].index[index_id]={
+		id=target_point_id,
 	}
 end
 
-local CROSS_INDEX={}--用于储存嗅探时重复的节点
+function etc.map:GetPoint(point_id)
+	return self.points[point_id]
+end
 
-function etc.map:Sniff(crossid,maxd)--嗅探与指定节点（路口）所连接的连通道路的信息，可指定嗅探的遍历深度
-	CROSS_INDEX={}
-	local sf=function(self,crossid,maxd,d,sf)--辅助函数
-		if CROSS_INDEX[crossid]==true then--避免重复
+local POINT_INDEX={}--用于储存嗅探时重复的节点
+
+function etc.map:Sniff1(pointid,maxd)--嗅探与指定节点（路口）所连接的连通道路的信息，可指定嗅探的遍历深度--点不重复
+	POINT_INDEX={}
+	local sf=function(self,pointid,maxd,d,sf)--辅助函数
+		if POINT_INDEX[pointid]==true then--避免重复
 			return false
 		else
-			CROSS_INDEX[crossid]=true--标记
+			POINT_INDEX[pointid]=true--标记
 			local info={}
-			local index=self[crossid].index
+			local index=self.points[pointid].index
 			for i=1,#index do
 				if type(index[i])=='table' then
-					local cross_id=index[i].cross
-					if CROSS_INDEX[cross_id]==true then--避免重复
+					local point_id=index[i].id
+					if POINT_INDEX[point_id]==true then--避免重复
 						info[i]=false
 					else
-						--CROSS_INDEX[cross_id]=true--这个位置标记可能会导致一些连通段缺失
+						POINT_INDEX[point_id]=true--标记
 						info[i]={
-							cross=cross_id
+							id=point_id
 						}
 						if d<maxd then
-							info[i].child=sf(self,cross_id,maxd,d+1,sf)
+							info[i].child=sf(self,point_id,maxd,d+1,sf)
 						end
 					end
 				else
@@ -78,47 +117,108 @@ function etc.map:Sniff(crossid,maxd)--嗅探与指定节点（路口）所连接
 			return info
 		end
 	end
-	return sf(self,crossid,maxd,1,sf)
+	return {
+		id=pointid,
+		child=sf(self,pointid,maxd,1,sf),
+	}
 end
 
-function etc.map:SetBlock(block_name,cross_id_1,cross_id_2,rank,active)
-	--
+function etc.map:SetLine(line_name,point_id_1,point_id_2,index)
+	local point_id_min=math.min(point_id_1,point_id_2)
+	local point_id_max=math.max(point_id_1,point_id_2)
+	if index==nil then index={} end
+	index.name=line_name
+	if type(self.lines[point_id_min])~='table' then
+		self.lines[point_id_min]={}
+	end
+	self.lines[point_id_min][point_id_max]=index
 end
 
-function etc.map:FindBlock(block_name)
-	--
+function etc.map:FindLine(line_name)
+	for k1,v1 in pairs(self.lines) do
+		for k2,v2 in pairs(v1) do
+			if v2.name==line_name then
+				return v2,k1,k2
+			end
+		end
+	end
+	return false
 end
 
-----------------------------------------
---map test
-
-local mymap
-
-do
-mymap=etc.map.New()
-mymap:SetCross(2,1,0)
-	mymap:SetCrossIndex(2,2,5,4)
-	mymap:SetCrossIndex(2,3,3,1)
-mymap:SetCross(3,2,0)
-	mymap:SetCrossIndex(3,1,2,3)
-	mymap:SetCrossIndex(3,2,6,4)
-mymap:SetCross(4,0,1)
-	mymap:SetCrossIndex(4,2,7,4)
-	mymap:SetCrossIndex(4,3,5,1)
-mymap:SetCross(5,1,1)
-	mymap:SetCrossIndex(5,1,4,3)
-	mymap:SetCrossIndex(5,2,8,4)
-	mymap:SetCrossIndex(5,3,6,1)
-	mymap:SetCrossIndex(5,4,2,2)
-mymap:SetCross(6,2,1)
-	mymap:SetCrossIndex(6,1,5,3)
-	mymap:SetCrossIndex(6,4,3,2)
-mymap:SetCross(7,0,2)
-	mymap:SetCrossIndex(7,3,8,1)
-	mymap:SetCrossIndex(7,4,4,2)
-mymap:SetCross(8,1,2)
-	mymap:SetCrossIndex(8,1,7,3)
-	mymap:SetCrossIndex(8,4,5,2)
+function etc.map:GetLine(point_id_1,point_id_2)
+	local point_id_min=math.min(point_id_1,point_id_2)
+	local point_id_max=math.max(point_id_1,point_id_2)
+	return self.lines[point_id_min][point_id_max]
 end
 
-local info=mymap:Sniff(7,3)
+local LINE_INDEX={}--用于储存嗅探时重复的边
+
+function etc.map:Sniff2(pointid,maxd)--嗅探与指定节点（路口）所连接的连通道路的信息，可指定嗅探的遍历深度--边不重复
+	LINE_INDEX={}
+	local sf=function(self,pointid,maxd,d,sf)--辅助函数
+			local info={}
+			local index=self.points[pointid].index
+			for i=1,#index do
+				if type(index[i])=='table' then
+					local point_id=index[i].id
+					local min_id=math.min(pointid,point_id)
+					local max_id=math.max(pointid,point_id)
+					if type(LINE_INDEX[min_id])~='table' then
+						LINE_INDEX[min_id]={}
+					end
+					if LINE_INDEX[min_id][max_id]==true then--避免重复
+						info[i]=false
+					else
+						LINE_INDEX[min_id][max_id]=true--标记
+						info[i]={
+							id=point_id
+						}
+						if d<maxd then
+							info[i].child=sf(self,point_id,maxd,d+1,sf)
+						end
+					end
+				else
+					info[i]=false
+				end
+			end
+			return info
+	end
+	return {
+		id=pointid,
+		child=sf(self,pointid,maxd,1,sf),
+	}
+end
+
+function etc.map:Sniff2L(pointid)--嗅探与指定节点（路口）所连接的连通道路的信息--边不重复--无限遍历，直到遍历完整个图
+	LINE_INDEX={}
+	local sf=function(self,pointid,sf)--辅助函数
+			local info={}
+			local index=self.points[pointid].index
+			for i=1,#index do
+				if type(index[i])=='table' then
+					local point_id=index[i].id
+					local min_id=math.min(pointid,point_id)
+					local max_id=math.max(pointid,point_id)
+					if type(LINE_INDEX[min_id])~='table' then
+						LINE_INDEX[min_id]={}
+					end
+					if LINE_INDEX[min_id][max_id]==true then--避免重复
+						info[i]=false
+					else
+						LINE_INDEX[min_id][max_id]=true--标记
+						info[i]={
+							id=point_id
+						}
+						info[i].child=sf(self,point_id,sf)
+					end
+				else
+					info[i]=false
+				end
+			end
+			return info
+	end
+	return {
+		id=pointid,
+		child=sf(self,pointid,sf),
+	}
+end

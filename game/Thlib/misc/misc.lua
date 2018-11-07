@@ -244,7 +244,7 @@ end
 mask_fader=Class(object)
 function mask_fader:init(mode,t)
 	self.group=GROUP_GHOST
-	self.t=t or 30
+	self.t=t or 29
 	task.New(self,function()
 		task.Wait(1)
 		if mode=='open' then

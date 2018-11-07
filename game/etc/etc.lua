@@ -9,6 +9,8 @@ etc={}
 --文件包含
 
 DoFile('etc\\etc_map.lua')
+DoFile('etc\\etc_gamemap.lua')
+DoFile('etc\\etc_navigation.lua')
 
 ----------------------------------------
 --辅助用的字符串格式化函数

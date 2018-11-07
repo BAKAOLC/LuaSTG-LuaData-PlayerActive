@@ -21,7 +21,10 @@ player_class=Class(object)
 function player_class:init(slot)
 	if not lstg.var.init_player_data then error('Player data has not been initialized. (Call function item.PlayerInit.)') end
 	
+	self.layer=LAYER_PLAYER
 	self.group=GROUP_PLAYER
+	self.bound=false
+	self.x=0
 	self.y=-176
 	self.supportx=0
 	self.supporty=self.y
@@ -29,7 +32,6 @@ function player_class:init(slot)
 	self.lspeed=2
 	self.collect_line=96
 	self.slow=0
-	self.layer=LAYER_PLAYER
 	self.lr=1
 	self.lh=0
 	self.fire=0
