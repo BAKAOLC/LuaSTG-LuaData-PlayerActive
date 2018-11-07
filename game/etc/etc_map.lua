@@ -16,7 +16,8 @@ function etc.map.New(existing)
 		['SetPoint']=etc.map.SetPoint,
 		['SetPointIndex']=etc.map.SetPointIndex,
 		['GetPoint']=etc.map.GetPoint,
-		['Sniff']=etc.map.Sniff,
+		['Sniff1']=etc.map.Sniff1,
+		['Sniff1L']=etc.map.Sniff1L,
 		['SetLine']=etc.map.SetLine,
 		['FindLine']=etc.map.FindLine,
 		['GetLine']=etc.map.GetLine,
@@ -87,7 +88,7 @@ end
 
 local POINT_INDEX={}--用于储存嗅探时重复的节点
 
-function etc.map:Sniff1(pointid,maxd)--嗅探与指定节点（路口）所连接的连通道路的信息，可指定嗅探的遍历深度--点不重复
+function etc.map:Sniff1(pointid,maxd)--嗅探与指定节点所连接的节点的信息，可指定嗅探的遍历深度--点不重复
 	POINT_INDEX={}
 	local sf=function(self,pointid,maxd,d,sf)--辅助函数
 		if POINT_INDEX[pointid]==true then--避免重复
@@ -123,6 +124,40 @@ function etc.map:Sniff1(pointid,maxd)--嗅探与指定节点（路口）所连�
 	}
 end
 
+function etc.map:Sniff1L(pointid)--嗅探与指定节点所连接的节点的信息--点不重复--无限遍历，直到遍历完整个图
+	POINT_INDEX={}
+	local sf=function(self,pointid,sf)--辅助函数
+		if POINT_INDEX[pointid]==true then--避免重复
+			return false
+		else
+			POINT_INDEX[pointid]=true--标记
+			local info={}
+			local index=self.points[pointid].index
+			for i=1,#index do
+				if type(index[i])=='table' then
+					local point_id=index[i].id
+					if POINT_INDEX[point_id]==true then--避免重复
+						info[i]=false
+					else
+						POINT_INDEX[point_id]=true--标记
+						info[i]={
+							id=point_id
+						}
+						info[i].child=sf(self,point_id,sf)
+					end
+				else
+					info[i]=false
+				end
+			end
+			return info
+		end
+	end
+	return {
+		id=pointid,
+		child=sf(self,pointid,sf),
+	}
+end
+
 function etc.map:SetLine(line_name,point_id_1,point_id_2,index)
 	local point_id_min=math.min(point_id_1,point_id_2)
 	local point_id_max=math.max(point_id_1,point_id_2)
@@ -153,7 +188,7 @@ end
 
 local LINE_INDEX={}--用于储存嗅探时重复的边
 
-function etc.map:Sniff2(pointid,maxd)--嗅探与指定节点（路口）所连接的连通道路的信息，可指定嗅探的遍历深度--边不重复
+function etc.map:Sniff2(pointid,maxd)--嗅探与指定节点所连接的节点的信息，可指定嗅探的遍历深度--边不重复
 	LINE_INDEX={}
 	local sf=function(self,pointid,maxd,d,sf)--辅助函数
 			local info={}
@@ -189,7 +224,7 @@ function etc.map:Sniff2(pointid,maxd)--嗅探与指定节点（路口）所连�
 	}
 end
 
-function etc.map:Sniff2L(pointid)--嗅探与指定节点（路口）所连接的连通道路的信息--边不重复--无限遍历，直到遍历完整个图
+function etc.map:Sniff2L(pointid)--嗅探与指定节点所连接的节点的信息--边不重复--无限遍历，直到遍历完整个图
 	LINE_INDEX={}
 	local sf=function(self,pointid,sf)--辅助函数
 			local info={}

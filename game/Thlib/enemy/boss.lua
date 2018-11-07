@@ -1,3 +1,4 @@
+
 LoadTexture('boss','THlib\\enemy\\boss.png')
 LoadImageGroup('bossring1','boss',80,0,16,8,1,16)
 for i=1,16 do SetImageState('bossring1'..i,'mul+add',Color(0x80FFFFFF)) end
@@ -66,10 +67,13 @@ function boss:init(x,y,name,cards,bg,dif)
 	
 	self.difficulty=dif
 	if self.difficulty==nil then self.difficulty='All' end
+	self._cardsys=SpellCardSystem(self, cards)
+	--[[
 	for i,c in pairs(cards) do
 		if c.is_combat then self.last_card=i end
 		if c.is_sc then self.ui.sc_left=self.ui.sc_left+1 end
 	end
+	--]]
 	self.bg=bg
 	lstg.tmpvar.boss=self
 	
@@ -134,7 +138,10 @@ function boss:frame()
 	self.aura_alpha=self.aura_alpha+self.aura_alpha_d
 	self.aura_alpha=min(max(0,self.aura_alpha),128)
 	
-	local c=self.cards[self.card_num]
+	if not(self.current_card) then
+		self.current_card = self.cards[self.card_num]
+	end
+	local c=self.current_card
 	if self.ex then
 		if self.ex.status==1 then
 			c=self.ex.cards[self.ex.nextcard]
@@ -466,6 +473,18 @@ function boss:kill()
 			end
 		end
 	end
+	local ref=self._cardsys:next(self)
+	if ref then
+		PreserveObject(self)
+	else
+		if self.ui then Del(self.ui) end
+		if self.bg then Del(self.bg) self.bg=nil end
+		if self.dialog_displayer then Del(self.dialog_displayer) end
+		if lstg.tmpvar.bg then lstg.tmpvar.bg.hide=false end
+		if self.class.defeat then self.class.defeat(self) end
+		ex.RemoveBoss(self)
+	end
+	--[[
 	self.card_num=self.card_num+1
 	if self.cards[self.card_num] then
 		local c=self.cards[self.card_num]
@@ -562,15 +581,7 @@ function boss:kill()
 		self.hp=c.hp
 		self.maxhp=c.hp
 		self.dmg_factor=0
-		PreserveObject(self)
-	else
-		if self.ui then Del(self.ui) end
-		if self.bg then Del(self.bg) self.bg=nil end
-		if self.dialog_displayer then Del(self.dialog_displayer) end
-		if lstg.tmpvar.bg then lstg.tmpvar.bg.hide=false end
-		if self.class.defeat then self.class.defeat(self) end
-		ex.RemoveBoss(self)
-	end
+		--]]
 end
 
 function boss:_castcard(c)
@@ -1105,11 +1116,11 @@ function boss_ui:render()
 			SetFontState('bonus','',Color(alpha*255,0,0,0))
 			RenderText('bonus',b,187+xoffset,207-dy2,0.5,'right')
 			RenderText('bonus',string.format('%d/%d',self.sc_hist[1],self.sc_hist[2]),97+xoffset,207-dy2,0.5,'right')
-			RenderText('bonus','HISTORY       BONUS',137+xoffset,207-dy2,0.5,'right')
+			RenderText('bonus','HISTORY	   BONUS',137+xoffset,207-dy2,0.5,'right')
 			SetFontState('bonus','',Color(alpha*255,255,255,255))
 			RenderText('bonus',b,186+xoffset,208-dy2,0.5,'right')
 			RenderText('bonus',string.format('%d/%d',self.sc_hist[1],self.sc_hist[2]),96+xoffset,208-dy2,0.5,'right')
-			RenderText('bonus','HISTORY       BONUS',136+xoffset,208-dy2,0.5,'right')
+			RenderText('bonus','HISTORY	   BONUS',136+xoffset,208-dy2,0.5,'right')
 		end	
 	end
 	if self.is_combat and self.drawtime then
@@ -1120,14 +1131,14 @@ function boss_ui:render()
 		--	RenderText('score',string.format('%.2f',min(99.99,self.countdown)),0,188,0.5,'centerpoint')
 --			SetFontState('time','',Color(alpha1*255,0,0,0))
 --			RenderText('time',string.format('%d',min(180.99,int(self.countdown))),0,193+yoffset+_dy,0.5,'centerpoint')
---			RenderText('time','            .'..string.format('%d%d',min(9,cd/10),min(9,cd%10)),0,190+yoffset+_dy,0.3,'centerpoint')
+--			RenderText('time','			.'..string.format('%d%d',min(9,cd/10),min(9,cd%10)),0,190+yoffset+_dy,0.3,'centerpoint')
 			SetFontState('time','',Color(alpha1*255,255,255,255))
 			RenderText('time',string.format('%d',int(self.countdown)),4,192+yoffset+_dy-dy2,0.5,'vcenter','right')
 			RenderText('time','.'..string.format('%d%d',min(9,cd/10),min(9,cd%10)),4,189+yoffset+_dy-dy2,0.3,'vcenter','left')
 		else
 --			SetFontState('time','',Color(alpha1*255,0,0,0))
 --			RenderText('time',string.format('0%d',min(99.99,int(self.countdown))),0,193+yoffset+_dy,0.5,'centerpoint')
---			RenderText('time','            .'..string.format('%d%d',min(9,cd/10),min(9,cd%10)),0,190+yoffset+_dy,0.3,'centerpoint')
+--			RenderText('time','			.'..string.format('%d%d',min(9,cd/10),min(9,cd%10)),0,190+yoffset+_dy,0.3,'centerpoint')
 			SetFontState('time','',Color(alpha1*255,255,30,30))
 			RenderText('time',string.format('0%d',min(99.99,int(self.countdown))),4,192+yoffset+_dy-dy2,0.5,'vcenter','right')
 			RenderText('time','.'..string.format('%d%d',min(9,cd/10),min(9,cd%10)),4,189+yoffset+_dy-dy2,0.3,'vcenter','left')
@@ -1427,3 +1438,165 @@ function hinter_bonus:render()
 	end
 end
 
+SpellCardSystem = plus.Class()
+---@param boss object @要执行符卡组的boss
+---@param cards table @符卡表
+function SpellCardSystem:init(boss, cards)
+	boss.cards = cards
+	boss.card_num = 0
+	boss.sc_left = 0
+	boss.last_card = 0
+	for i = 1, #boss.cards do
+		if boss.cards[i].is_combat then
+			boss.last_card = i
+		end
+		if boss.cards[i].is_sc then
+			boss.sc_left = boss.sc_left + 1
+		end
+	end
+end
+---帧逻辑适配
+---@param boss object @要执行符卡组的boss
+function SpellCardSystem:frame(boss)
+	local card = boss.current_card or boss.cards[boss.card_num]
+	if card then card.frame(boss) end
+end
+---渲染逻辑适配
+---@param boss object @要执行符卡组的boss
+function SpellCardSystem:render(boss)
+	local card = boss.current_card or boss.cards[boss.card_num]
+	if card then card.render(boss) end
+end
+---结束逻辑适配
+---@param boss object @要执行符卡组的boss
+function SpellCardSystem:del(boss)
+	local card = boss.current_card or boss.cards[boss.card_num]
+	if card then card.del(boss) end
+end
+---执行通常符卡
+---@param boss object @要执行符卡组的boss
+---@param card table @通常boss符卡
+---@param mode number @血条样式
+function SpellCardSystem:DoCard(boss, card, mode)
+	boss.current_card = card
+	if card.is_sc then
+		self:CastCard(boss, card)
+	elseif not card.fake then
+		boss.sc_bonus = nil
+	end
+	self:SetHPBar(boss, mode)
+	if card.is_combat then
+		item.StartChipBonus(boss)
+		boss.spell_damage = 0
+	end
+	task.Clear(boss)
+	task.Clear(boss.ui)
+	boss.ui.countdown = card.t3 / 60
+	boss.ui.is_combat = card.is_combat
+	boss.timer = -1
+	boss.hp = card.hp
+	boss.maxhp = card.hp
+	boss.dmg_factor = 0
+	card.init(boss)
+end
+---执行下一张符卡
+---@param boss object @要执行符卡组的boss
+function SpellCardSystem:next(boss)
+	boss.card_num = boss.card_num + 1
+	if not(boss.cards[boss.card_num]) then
+		self.is_finish = true
+		return false
+	end
+	local last, now, next, mode
+	for n = boss.card_num - 1, 1, -1 do
+		if boss.cards[n] and boss.cards[n].is_combat then
+			last = boss.cards[n]
+			break
+		end
+	end
+	now = boss.cards[boss.card_num]
+	for n = boss.card_num + 1, #boss.cards do
+		if boss.cards[n] and boss.cards[n].is_combat then
+			next = boss.cards[n]
+			break
+		end
+	end
+	if now.is_sc then
+		if last and last.is_sc then
+			mode = 0
+		elseif last and not(last.is_sc) then
+			if (last.t1 ~= last.t3) then mode = 2 else mode = 0 end
+		elseif not(last) then
+			mode = 0
+		end
+	elseif not(now.is_sc) then
+		if next and next.is_sc then
+			if (next.t1 ~= next.t3) then mode = 1 else mode = 0 end
+		elseif next and not(next.is_sc) then
+			mode = 0
+		elseif not(next) then
+			mode = 0
+		end
+	end
+	if now.t1 == now.t3 then mode = -1 end
+	self:DoCard(boss, now, mode)
+	return true
+end
+---设置血条类型
+---@param boss object @要执行符卡组的boss
+---@param mode number @血条样式(0完整，1非&符中的非，2非&符中的符)
+function SpellCardSystem:SetHPBar(boss, mode)
+	local color1, color2 = Color(0xFFFF8080), Color(0xFFFFFFFF)
+	if mode == 0 then
+		boss.ui.hpbarcolor1 = color1
+		boss.ui.hpbarcolor2 = nil
+	elseif mode == 1 then
+		boss.ui.hpbarcolor1 = color1
+		boss.ui.hpbarcolor2 = color2
+	elseif mode == 2 then
+		boss.ui.hpbarcolor1 = color1
+		boss.ui.hpbarcolor2 = color1
+	end
+end
+---宣言符卡
+---@param boss object @要执行符卡组的boss
+---@param card table @目标符卡
+function SpellCardSystem:CastCard(boss, card)
+
+	if not card.fake then
+		boss.sc_bonus = boss.sc_bonus_max
+	end
+	New(spell_card_ef)
+
+	PlaySound('cat00', 0.5)
+
+	if scoredata.spell_card_hist == nil then
+		scoredata.spell_card_hist = {}
+	end
+
+	local sc_hist = scoredata.spell_card_hist
+	local player = lstg.var.player_name
+	local diff = boss.difficulty
+	local name = card.name
+	if sc_hist[player] == nil then
+		sc_hist[player] = {}
+	end
+
+	if sc_hist[player][diff] == nil then
+		sc_hist[player][diff]={}
+	end
+
+	if sc_hist[player][diff][name] == nil then
+		sc_hist[player][diff][name] = {0, 0}
+	end
+
+	if not ext.replay.IsReplay() then
+
+		sc_hist[player][diff][name][2] = sc_hist[player][diff][name][2] + 1
+
+	end
+
+	boss.ui.sc_hist = sc_hist[player][diff][name]
+
+	if name ~= '' then boss.ui.sc_name = name end
+end
