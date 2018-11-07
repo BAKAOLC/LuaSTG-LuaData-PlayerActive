@@ -240,35 +240,16 @@ end
 ------------------replay_saver-------------------------
 local _keyboard={}
 do
-  for i=65,90 do table.insert(_keyboard,i) end
-  for i=97,122 do table.insert(_keyboard,i) end
-  for i=48,57 do table.insert(_keyboard,i) end
-  table.insert(_keyboard,43)
-  table.insert(_keyboard,45)
-  table.insert(_keyboard,61)
-  table.insert(_keyboard,46)
-  table.insert(_keyboard,44)
-  table.insert(_keyboard,33)
-  table.insert(_keyboard,63)
-  table.insert(_keyboard,64)
-  table.insert(_keyboard,58)
-  table.insert(_keyboard,59)
-  table.insert(_keyboard,91)
-  table.insert(_keyboard,93)
-  table.insert(_keyboard,40)
-  table.insert(_keyboard,41)
-  table.insert(_keyboard,95)
-  table.insert(_keyboard,47)
-  table.insert(_keyboard,123)
-  table.insert(_keyboard,125)
-  table.insert(_keyboard,124)
-  table.insert(_keyboard,126)
-  table.insert(_keyboard,94)
-  for i=35,38 do table.insert(_keyboard,i) end
-  table.insert(_keyboard,42)
-  table.insert(_keyboard,92)
-  table.insert(_keyboard,127)
-  table.insert(_keyboard,34)
+	for i=65,90 do table.insert(_keyboard,i) end
+	for i=97,122 do table.insert(_keyboard,i) end
+	for i=48,57 do table.insert(_keyboard,i) end
+	for _,i in ipairs({43,45,61,46,44,33,63,64,58,59,91,93,40,41,95,47,123,125,124,126,94}) do
+		table.insert(_keyboard,i)
+	end
+	for i=35,38 do table.insert(_keyboard,i) end
+	for _,i in ipairs({42,92,127,34}) do
+		table.insert(_keyboard,i)
+	end
 end
 
 replay_saver = Class(object)

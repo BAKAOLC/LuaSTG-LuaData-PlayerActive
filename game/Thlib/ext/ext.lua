@@ -17,6 +17,12 @@ DoFile(extpath.."ext_stage_group.lua")--关卡组
 --暂停模糊用
 LoadFX('texture_BoxBlur25','shader\\texture_BoxBlur25.fx')
 CreateRenderTarget('_pause_blur')
+--判定检测插件文件接口
+if FileExist('CollisionChecker.dat') then
+	LoadPack('CollisionChecker.dat')
+	DoFile('ColliCheck.lua')
+	Collision_Checker.init()
+end
 
 ext.replayTicker=0--控制录像速度时有用
 ext.slowTicker=0--控制时缓的变量
@@ -197,6 +203,10 @@ function RenderFunc()
 			ObjRender()
 			SetViewMode'world'
 			DrawCollider()
+		end
+		--！警告：存在潜在的多world兼容问题
+		if Collision_Checker then
+			Collision_Checker.render()
 		end
 		if not stage.current_stage.is_menu then RunSystem("on_stage_render") end
 	end
