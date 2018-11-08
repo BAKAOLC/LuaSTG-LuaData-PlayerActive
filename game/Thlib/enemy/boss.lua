@@ -759,25 +759,13 @@ function boss.dialog:sentence(img,pos,text,t,hscale,vscale)
 	self.dialog_displayer._vscale[pos]=vscale or 1
 	task.Wait()
 	t=t or (60+#text*5)
-	--[=[
 	for i=1,t do
-		if (KeyIsPressed'shoot' or self.dialog_displayer.jump_dialog>60) and _dialog_can_skip then
+		if (KeyIsPressed('shoot',1) or self.dialog_displayer.jump_dialog>60) and _dialog_can_skip then
 			PlaySound('plst00',0.35,0,true)
 			break
 		end
 		task.Wait()
 	end
-	--]=]
-	local prekey=false
-	for i=1,t do
-		if ((KeyIsDown('shoot')==true and prekey==false) or self.dialog_displayer.jump_dialog>60) and _dialog_can_skip then
-			PlaySound('plst00',0.35,0,true)
-			break
-		end
-		prekey=KeyIsDown('shoot',1)
-		task.Wait()
-	end
-	
 	task.Wait(2)
 end
 -------------
@@ -799,7 +787,7 @@ function dialog_displayer:frame()
 	self.co=max(min(60,self.co+1.5*self.active),-60)
 	end
 	if player.dialog==true and self.active then
-		if KeyIsDown('shoot') then self.jump_dialog=self.jump_dialog+1 else self.jump_dialog=0 end
+		if KeyIsDown('shoot',1) then self.jump_dialog=self.jump_dialog+1 else self.jump_dialog=0 end
 	end
 end
 function dialog_displayer:render()
