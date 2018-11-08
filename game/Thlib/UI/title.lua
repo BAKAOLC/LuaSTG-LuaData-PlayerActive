@@ -448,9 +448,6 @@ function stage_menu:init()
 		PlayMusic('menu')
 	end)
 end
-function stage_menu:frame()
-	task.Do(self)
-end
 function stage_menu:render()
 	ui.DrawMenuBG()
 end

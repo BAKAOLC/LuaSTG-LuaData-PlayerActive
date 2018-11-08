@@ -130,6 +130,55 @@ function UserSystemOperation()--模拟内核级操作
 	end
 end
 
+function ChangeGameStage()--切关处理
+	local w1=GetDefaultWorld()--by ETC，默认world参数由Lscreen提供
+	jstg.ApplyWorld(w1)
+	ResetJavastageWorlds()--专门克制jstg.worlds，由Lscreen提供
+	ScreenShakeClear()--重置震屏--自机活
+	
+	ResetLstgtmpvar()--重置lstg.tmpvar
+	ex.Reset()--重置ex全局变量
+	
+	if lstg.nextvar then
+		lstg.var=lstg.nextvar
+		lstg.nextvar =nil
+	end
+	
+	-- 初始化随机数
+	if lstg.var.ran_seed then
+		--Print('RanSeed',lstg.var.ran_seed)
+		ran:Seed(lstg.var.ran_seed)
+	end
+	
+	--lstg.var = DeSerialize(nextRecordStage.stageExtendInfo)
+	--lstg.nextvar = DeSerialize(nextRecordStage.stageExtendInfo)
+	--assert(lstg.var.ran_seed == nextRecordStage.randomSeed)  -- 这两个应该相等
+	
+	--刷新最高分
+	if not stage.next_stage.is_menu then
+		if scoredata.hiscore == nil then
+			scoredata.hiscore = {}
+		end
+		lstg.tmpvar.hiscore = scoredata.hiscore[stage.next_stage.stage_name..'@'..tostring(lstg.var.player_name)]
+	end
+	
+	jstg.enable_player=false
+	
+	--切换关卡
+	stage.current_stage=stage.next_stage
+	stage.next_stage=nil
+	stage.current_stage.timer=0
+	stage.current_stage:init()
+	
+	if not jstg.enable_player then
+		jstg.Compatible()--创建自机，支持旧版本mod
+	end
+	
+	ex.ResetSignals()--标记点清除，编辑器功能
+	
+	RunSystem('on_stage_init')
+end
+
 function DoFrame()--行为帧动作(和游戏循环的帧动作分开)
 	--标题设置
 	local title=setting.mod..' | FPS='..GetFPS()..' | Objects='..GetnObj()..' | Luastg Ex Plus'
@@ -142,52 +191,7 @@ function DoFrame()--行为帧动作(和游戏循环的帧动作分开)
 	SetTitle(title)
 	--切关处理
 	if stage.next_stage then
-		local w1=GetDefaultWorld()--by ETC，默认world参数由Lscreen提供
-		jstg.ApplyWorld(w1)
-		ResetJavastageWorlds()--专门克制jstg.worlds，由Lscreen提供
-		ScreenShakeClear()--重置震屏--自机活
-		
-		ResetLstgtmpvar()--重置lstg.tmpvar
-		ex.Reset()--重置ex全局变量
-		
-		if lstg.nextvar then
-			lstg.var=lstg.nextvar
-			lstg.nextvar =nil
-		end
-		
-		-- 初始化随机数
-		if lstg.var.ran_seed then
-			--Print('RanSeed',lstg.var.ran_seed)
-			ran:Seed(lstg.var.ran_seed)
-		end
-		
-		--lstg.var = DeSerialize(nextRecordStage.stageExtendInfo)
-		--lstg.nextvar = DeSerialize(nextRecordStage.stageExtendInfo)
-		--assert(lstg.var.ran_seed == nextRecordStage.randomSeed)  -- 这两个应该相等
-		
-		--刷新最高分
-		if not stage.next_stage.is_menu then
-			if scoredata.hiscore == nil then
-				scoredata.hiscore = {}
-			end
-			lstg.tmpvar.hiscore = scoredata.hiscore[stage.next_stage.stage_name..'@'..tostring(lstg.var.player_name)]
-		end
-		
-		jstg.enable_player=false
-		
-		--切换关卡
-		stage.current_stage=stage.next_stage
-		stage.next_stage=nil
-		stage.current_stage.timer=0
-		stage.current_stage:init()
-		
-		if not jstg.enable_player then
-			jstg.Compatible()--创建自机，支持旧版本mod
-		end
-		
-		ex.ResetSignals()--标记点清除，编辑器功能
-		
-		RunSystem('on_stage_init')
+		ChangeGameStage()
 	end
 	--刷新输入
 	jstg.GetInputEx()
@@ -293,11 +297,6 @@ if setting.mod~='launcher' then
 	Include 'root.lua'
 else
 	Include 'launcher.lua'
-end
-
-if setting.mod~='launcher' then
-	_mod_version=_mod_version or 0
-	if _mod_version>_luastg_version or _mod_version<_luastg_min_support then error(string.format("Mod version and engine version mismatch. Mod version is %.2f, LuaSTG version is %.2f.",_mod_version/100,_luastg_version/100)) end
 end
 
 ----------------------------------------
