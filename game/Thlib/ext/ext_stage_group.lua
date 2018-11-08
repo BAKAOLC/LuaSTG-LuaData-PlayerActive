@@ -320,6 +320,7 @@ function stage.group.ReturnToTitle(save_rep,finish)
 	local self=stage.current_stage
 	local title=stage.stages[self.group.title]
 	title.finish=finish or 0
+	Print(ext.replay.IsReplay(),save_rep,ext.GetPauseMenuOrder())
 	if ext.replay.IsReplay() then
 		title.save_replay=nil
 	elseif not save_rep then

@@ -47,6 +47,7 @@ function etc.navigation.render2(renderlist,scale,width)--渲染整个地图，�
 end
 
 function etc.navigation.New()--创建一个高德导航
+	
 end
 
 function etc.navigation:init()

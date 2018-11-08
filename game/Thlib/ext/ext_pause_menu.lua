@@ -245,6 +245,7 @@ function ext.pausemenu.frame(self)
 					self.t=60
 					lstg.tmpvar.death = false
 					trueorder=ext.pausemenu.getorder(self.menutext[self.pos])--需要翻译得到可用的order
+					ext.PushPauseMenuOrder(trueorder)--这样才设置order
 					ext.pausemenu.exit(self)
 				else
 					self.choose=false
@@ -258,6 +259,7 @@ function ext.pausemenu.frame(self)
 				if self.pos==1 then
 					lstg.tmpvar.death = false
 					trueorder=ext.pausemenu.getorder(self.menutext[self.pos])--需要翻译得到可用的order
+					ext.PushPauseMenuOrder(trueorder)--这样才设置order
 					ext.pausemenu.exit(self)
 				elseif order==rtx.setting or order==rtx.manual then
 					--留备以后使用
@@ -265,7 +267,6 @@ function ext.pausemenu.frame(self)
 					self.choose=true
 				end
 			end
-			ext.PushPauseMenuOrder(trueorder)--这样才设置order
 		end
 		if GetLastKey()==setting.keys.spell and self.t<=0 then--取消操作处理
 			if self.choose then--二级菜单
@@ -365,8 +366,6 @@ end
 function ext.pausemenu.exit(self)--离开
 	self.lock=true
 	task.New(self,function()
-		task.Wait(10)
-		
 		--施放辅助幕布，在这里放是因为有些时候不适合在关卡里创建mask_fader
 		if
 			ext.GetPauseMenuOrder()=='Restart' or
@@ -381,8 +380,8 @@ function ext.pausemenu.exit(self)--离开
 			--Continue有两种情况，一种是续关，续关不需要幕布，ex模式、单面练习、符卡练习需要
 			ext.switchmask.close(nil,30)
 		end
-		Print(ext.GetPauseMenuOrder())
-		task.Wait(30)
+		--Print(ext.GetPauseMenuOrder())
+		task.Wait(40)
 		task.New(stage.current_stage,function()
 			task.Wait(1)
 			ext.pausemenu.resumesound()--恢复关卡声音

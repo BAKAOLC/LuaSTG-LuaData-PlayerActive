@@ -1,3 +1,7 @@
+--将debug信息存入lstg.var以便rep存取
+lstg.var._boss_class_name=_boss_class_name
+lstg.var._boss_class_sc_index=_boss_class_sc_index
+
 stage_init=stage.New('init',true,true)
 function stage_init:init()
 	menu_items={}
@@ -5,6 +9,7 @@ function stage_init:init()
 		table.insert(menu_items,{player_list[i][1],function()
 			menu.FlyOut(menu_player_select,'left')
 			lstg.var.player_name=player_list[i][2]
+			lstg.var.rep_player=player_list[i][3]
 			task.New(stage_init,function()
 				task.Wait(30)
 				New(mask_fader,'close')
@@ -26,6 +31,9 @@ stage.group.DefStageFunc('SC Debugger@SC Debugger','init',function(self)
 	_init_item(self)
 	New(mask_fader,'open')
 	New(_G[lstg.var.player_name])
+	--取出lstg.var中记录的debug信息
+	local _boss_class_name=lstg.var._boss_class_name
+	local _boss_class_sc_index=lstg.var._boss_class_sc_index
 	task.New(self,function()
 		local musicname="spellcard"
 		do
