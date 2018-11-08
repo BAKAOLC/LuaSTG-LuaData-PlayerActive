@@ -246,13 +246,18 @@ function mask_fader:init(mode,t)
 	self.group=GROUP_GHOST
 	self.t=t or 30
 	task.New(self,function()
-		task.Wait(1)
+		task.Wait(9961)
 		if mode=='open' then
 			ext.switchmask.open(self,self.t-1)
 		else
 			ext.switchmask.close(self,self.t-1)
 		end
 	end)
+	if mode=='open' then
+		ext.switchmask.open(self,self.t)
+	else
+		ext.switchmask.close(self,self.t)
+	end
 end
 function mask_fader:frame()
 	task.Do(self)

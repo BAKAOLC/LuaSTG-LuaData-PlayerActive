@@ -17,18 +17,13 @@ DoFile(extpath.."ext_stage_group.lua")--关卡组
 --暂停模糊用
 LoadFX('texture_BoxBlur25','shader\\texture_BoxBlur25.fx')
 CreateRenderTarget('_pause_blur')
---判定检测插件文件接口
-if FileExist('CollisionChecker.dat') then
-	LoadPack('CollisionChecker.dat')
-	DoFile('ColliCheck.lua')
-	Collision_Checker.init()
-end
 
 ext.replayTicker=0--控制录像速度时有用
 ext.slowTicker=0--控制时缓的变量
 ext.time_slow_level={1, 2, 3, 4}--60/30/20/15 4个程度
 ext.sc_pr=false--判断是否处于符卡练习
 ext.rep_over=false--判断录像结束
+ext.replay_end=false--标记录像播放到达末尾
 ext.pause_menu=nil--暂停菜单对象
 ext.switch_mask=ext.switchmask.New()--切关幕布对象
 ext.pause_menu_order=nil--选择的暂停菜单选项
@@ -195,7 +190,7 @@ function RenderFunc()
 	BeginScene()
 	SetWorldFlag(1)
 	BeforeRender()
-	if stage.current_stage.timer and stage.current_stage.timer > 0 and stage.next_stage == nil then
+	if stage.current_stage.timer and stage.current_stage.timer >= 0 and stage.next_stage == nil then
 		stage.current_stage:render()
 		for i=1,#jstg.worlds do
 			jstg.SwitchWorld(i)
@@ -203,10 +198,6 @@ function RenderFunc()
 			ObjRender()
 			SetViewMode'world'
 			DrawCollider()
-		end
-		--！警告：存在潜在的多world兼容问题
-		if Collision_Checker then
-			Collision_Checker.render()
 		end
 		if not stage.current_stage.is_menu then RunSystem("on_stage_render") end
 	end
@@ -220,6 +211,7 @@ function BeforeRender()
 	--暂停模糊支持
 	if ext.pauseblur_radiu>0 then
 		PushRenderTarget('_pause_blur')
+		RenderClear(Color(255,0,0,0))
 	end
 	
 	--震屏特效支持
@@ -259,13 +251,19 @@ function AfterRender()
 		--暂停菜单渲染
 		ext.pausemenu.render(ext.pause_menu)
 	end
+	
+	--开发者模式
 	if _render_debug then
-		lstg.RenderDebug.RenderDrawcallTimer()--用于制作者检查是否有渲染函数调用过多的问题
+		--用于制作者检查是否有渲染函数调用过多的问题
+		--可以开启作弊模式
+		--可以精确地查看单位的碰撞大小
+		--可以动态调整时缓
+		lstg.RenderDebug.RenderDrawcallTimer()
 	end
 end
 
 function FocusLoseFunc()
-	if ext.pause_menu==nil and stage.current_stage and jstg.network.status==0 then
+	if ext.pause_menu==nil and stage.current_stage and jstg.network.status==0 and not _render_debug then
 		if not stage.current_stage.is_menu then
 			ext.pop_pause_menu=true
 		end

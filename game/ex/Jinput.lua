@@ -282,14 +282,14 @@ function jstg.GetInputSingleEx(i,is_pause)
 			KeyStatePre[k] = KeyState[k]
 		end
 	end
-
+	
 	-- 不是录像时更新按键状态
 	if not ext.replay.IsReplay() then
 		for k,v in pairs(sk) do
 			KeyState[k] = GetVKeyStateEx(jstg.network.playerkeymask[i],jstg.syskey[k])
 		end
 	end
-
+	
 	if not is_pause then
 		if ext.replay.IsRecording() then
 			-- 录像模式下记录当前帧的按键
@@ -297,16 +297,14 @@ function jstg.GetInputSingleEx(i,is_pause)
 		elseif ext.replay.IsReplay() then
 			-- 回放时载入按键状态
 			--Print("ReadReplay")
-			if not replayReader:Next(KeyState) then--by ETC，检测rep是否已经结束，结束则弹出暂停菜单，状态为replay播放完
-				--算了，算了，bug一堆
-				--ext.rep_over=true
-				--ext.pop_pause_menu=true
-				--ext.SetPauseMenuType('replay-finish')
+			local ref=replayReader:Next(KeyState)
+			if not ref and not ext.replay_end then--by ETC，检测rep是否已经结束，结束则弹出暂停菜单，状态为replay播放完
+				ext.replay_end=true--会在rep重放和回主菜单的时候重置
+				ext.rep_over=true
+				ext.pop_pause_menu=true
+				ext.SetPauseMenuType('replay-finish')
 			end
 			--assert(replayReader:Next(KeyState), "Unexpected end of replay file.")
 		end
 	end
 end
-
-
-

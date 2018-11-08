@@ -283,7 +283,8 @@ function stage.group.FinishReplay()
 	else
 		if ext.replay.IsReplay() then
 			-- 载入关卡并执行录像
-			stage.Set('load', ext.replay.GetReplayFilename(), ext.replay.GetReplayStageName(ext.replay.GetCurrentReplayIdx() + 1))
+			--这样会导致切关幕布消失，目前未发现其他问题
+			--stage.Set('load', ext.replay.GetReplayFilename(), ext.replay.GetReplayStageName(ext.replay.GetCurrentReplayIdx() + 1))
 		end
 	end
 end
@@ -320,8 +321,8 @@ function stage.group.ReturnToTitle(save_rep,finish)
 	local self=stage.current_stage
 	local title=stage.stages[self.group.title]
 	title.finish=finish or 0
-	Print(ext.replay.IsReplay(),save_rep,ext.GetPauseMenuOrder())
 	if ext.replay.IsReplay() then
+		ext.replay_end=false--回主菜单的时候，重置这个参数，这个参数标记录像是否已经播放到末尾，by ETC
 		title.save_replay=nil
 	elseif not save_rep then
 		title.save_replay=nil

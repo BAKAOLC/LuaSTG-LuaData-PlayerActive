@@ -18,11 +18,14 @@ function ext.switchmask.init(self)
 	self.x=0
 	self.y=0
 	self.tick=0
+	self.tick_d=-0.05
 	self.timer=0
 end
 
 function ext.switchmask.frame(self)
 	task.Do(self)
+	self.tick=self.tick+self.tick_d
+	self.tick=max(0,min(1,self.tick))
 	self.timer=self.timer+1
 end
 
@@ -45,17 +48,18 @@ function ext.switchmask.render(self)
 		
 		PushRenderTarget('_switch_mask')
 		RenderClear(Color(255,0,0,0))
+		local k=sin(90*self.tick)
 		Render4V('_switch_mask_eff1',
-			(1-self.tick)*(-screen.width)+           0,screen.height,0.5,
-			(1-self.tick)*(-screen.width)+screen.width,screen.height,0.5,
-			(1-self.tick)*(-screen.width)+screen.width,            0,0.5,
-			(1-self.tick)*(-screen.width)+           0,            0,0.5
+			(1-k)*(-screen.width)+           0,screen.height,0.5,
+			(1-k)*(-screen.width)+screen.width,screen.height,0.5,
+			(1-k)*(-screen.width)+screen.width,            0,0.5,
+			(1-k)*(-screen.width)+           0,            0,0.5
 		)
 		Render4V('_switch_mask_eff2',
-			(1-self.tick)*screen.width+           0,screen.height,0.5,
-			(1-self.tick)*screen.width+screen.width,screen.height,0.5,
-			(1-self.tick)*screen.width+screen.width,            0,0.5,
-			(1-self.tick)*screen.width+           0,            0,0.5
+			(1-k)*screen.width+           0,screen.height,0.5,
+			(1-k)*screen.width+screen.width,screen.height,0.5,
+			(1-k)*screen.width+screen.width,            0,0.5,
+			(1-k)*screen.width+           0,            0,0.5
 		)
 		PopRenderTarget('_switch_mask')
 		
@@ -70,10 +74,16 @@ function ext.switchmask.gethandle()--用于获得当前执行幕布逻辑的对�
 end
 
 
---target指向要执行幕布切换task的对象，填nil时会每帧执行，传入obj对象时会依靠obj的更新来执行（obj对象需要执行task.Do）
+--target指向要执行幕布切换task的对象，填nil时会每帧执行，传入obj对象时会依靠obj的更新来执行（obj对象需要执行task.Do）--已弃用
+--现在幕布不会被暂停
 --t为变化的持续时间
 function ext.switchmask.close(target,t)
-	if target==nil then target=ext.switchmask.gethandle() end
+	local sm=ext.switchmask.gethandle()
+	sm.tick_d=1/t
+	do return end
+	if target==nil then
+		target=sm
+	end
 	task.New(target,function()
 		local sm=ext.switchmask.gethandle()
 		for i=1,t do
@@ -84,7 +94,12 @@ function ext.switchmask.close(target,t)
 end
 
 function ext.switchmask.open(target,t)
-	if target==nil then target=ext.switchmask.gethandle() end
+	local sm=ext.switchmask.gethandle()
+	sm.tick_d=-1/t
+	do return end
+	if target==nil then
+		target=sm
+	end
 	task.New(target,function()
 		local sm=ext.switchmask.gethandle()
 		for i=1,t do
@@ -92,6 +107,11 @@ function ext.switchmask.open(target,t)
 			task.Wait(1)
 		end
 	end)
+end
+
+function ext.switchmask.set(n)
+	local sm=ext.switchmask.gethandle()
+	sm.tick=n
 end
 
 ----------------------------------------

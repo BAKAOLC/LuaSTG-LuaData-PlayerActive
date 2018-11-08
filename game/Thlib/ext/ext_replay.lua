@@ -210,6 +210,7 @@ end
 function stage.Restart()
 	stage.preserve_res = true  -- 保留资源在转场时不清空
 	if ext.replay.IsReplay() then
+		ext.replay_end=false--录像重放的时候，重置这个参数，这个参数标记录像是否已经播放到末尾，by ETC
 		stage.Set("load", ext.replay.GetReplayFilename(), lstg.var.stage_name)
 		--stage.Set("load", ext.replay.GetReplayStageName(1), lstg.var.stage_name)
 	elseif ext.replay.IsRecording() then
