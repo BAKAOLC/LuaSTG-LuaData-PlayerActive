@@ -7,6 +7,8 @@
 *.fnt
 *.oft
 *.otf
+*.psd
+*.jpg
 
 *.wav
 *.ogg
@@ -53,7 +55,8 @@
 #不需要tools文件夹的内容
 /tools/*
 
-*.psd
-*.jpg
-projects/*
+#不需要junko文件夹的内容
 junko/*
+
+#不需要projects文件夹的内容
+projects/*
