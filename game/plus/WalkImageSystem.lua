@@ -55,6 +55,17 @@ end
 function BossWalkImageSystem:frame()
     local obj = self.obj
     WalkImageSystem.frame(self, obj.dx)
+    if obj.img4 then
+        self.mode = 4
+    elseif obj.img3 then
+        self.mode = 3
+    elseif obj.img2 then
+        self.mode = 2
+    elseif obj.img1 then
+        self.mode = 1
+    else
+        self.mode = 0
+    end
     if obj.cast_t > 0 then
         obj.cast = obj.cast + 1
     elseif obj.cast_t < 0 then

@@ -22,6 +22,8 @@ local sounds={
 	'heal','ice','ice2','item01','ophide','opshow',
 }
 
+LoadPack('se.zip')
+
 for _,v in pairs(sounds) do
 	LoadSound(v,'THlib\\se\\se_'..v..'.wav')
 end

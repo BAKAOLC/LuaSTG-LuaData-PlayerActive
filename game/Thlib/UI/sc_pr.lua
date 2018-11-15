@@ -14,7 +14,7 @@ stage.group.DefStageFunc('Spell Practice@Spell Practice','init',function(self)
 			if _editor_class[_sc_table[lstg.var.sc_index][1]]._bg ~= nil then
 				New(_editor_class[_sc_table[lstg.var.sc_index][1]]._bg)
 			else
-				New(bamboo_background)
+				New(temple_background)
 			end
 		end
 		do--播放bgm

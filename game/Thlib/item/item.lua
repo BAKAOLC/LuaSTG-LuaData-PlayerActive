@@ -515,6 +515,7 @@ function item.PlayerReinit()--自机活使用
 	lstg.var.pointrates={rate,rate,rate,rate}
 	lstg.var.psychic={400,400,400,400}
 	lstg.var.expsychic={0,0,0,0}
+	ResetPlayerMissTimer()
 end
 
 ------------------------------------------

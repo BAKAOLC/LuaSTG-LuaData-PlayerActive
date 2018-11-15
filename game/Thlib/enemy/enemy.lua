@@ -113,103 +113,21 @@ function enemy:init(style,hp,clear_bullet,auto_delete,nontaijutsu)
 	enemybase.init(self,hp,nontaijutsu)
 	self.clear_bullet=clear_bullet
 	self.auto_delete=auto_delete
+	
 	self._wisys = EnemyWalkImageSystem(self, style, 8)--by OLC，新行走图系统
-	--[=[
-	self.style=style
-	self.aura=_enemy_aura_tb[style]
-	self.death_ef=_death_ef_tb[style]
-	if style<=18 then
-		self.imgs={}
-		for i=1,12 do self.imgs[i]='enemy'..style..'_'..i end
-		self.ani_intv=8
-		self.lr=1
-	elseif style<=22 then
-		self.img='kedama'..(style-18)
-		self.omiga=12
-	elseif style<=26 then
-		self.img='enemy_orb'..(style-22)
-		self.omiga=6
-	elseif style==27 or style==31 then
-		self.img='ghost_fire_r'
-		self.rot=-90
-	elseif style==28 or style==32 then
-		self.img='ghost_fire_b'
-		self.rot=-90
-	elseif style==29 or style==33 then
-		self.img='ghost_fire_g'
-		self.rot=-90
-	elseif style==30 or style==34 then
-		self.img='ghost_fire_y'
-		self.rot=-90
-	end
-	]=]
 end
 
 function enemy:frame()
 	enemybase.frame(self)
+	
 	self._wisys:frame()--by OLC，新行走图系统
 	if self.dmgt then self.dmgt = max(0, self.dmgt - 1) end
-	--[=[
-	if self.style<=18 then
-		if self.dx>0.5 then dx=1 elseif self.dx<-0.5 then dx=-1 else dx=0 end
-		self.lr=self.lr+dx
-		if self.lr> 18 then self.lr= 18 end
-		if self.lr<-18 then self.lr=-18 end
-		if self.lr==0 then self.lr=self.lr+dx end
-		if dx==0 then
-			if self.lr> 1 then self.lr=self.lr-1 end
-			if self.lr<-1 then self.lr=self.lr+1 end
-		end
-		if abs(self.lr)==1 then
-			self.img=self.imgs[int(self.ani/self.ani_intv)%4+1]
-		elseif abs(self.lr)==18 then
-			self.img=self.imgs[int(self.ani/self.ani_intv)%4+9]
-		else
-			self.img=self.imgs[int((abs(self.lr)-2)/4)+5]
-		end
-		self.hscale=sign(self.lr)
-	end
-	]=]
+	
 	if self.auto_delete and BoxCheck(self,lstg.world.boundl,lstg.world.boundr,lstg.world.boundb,lstg.world.boundt) then self.bound=true end
 end
 
 function enemy:render()
 	self._wisys:render(self.dmgt, self.dmgmaxt)--by OLC and ETC，新行走图系统
-	--[=[
-	if self._blend then
-		SetImgState(self,self._blend,self._a,self._r,self._g,self._b)
-	end
-	if self.aura then
-		if self._blend then
-			SetImageState('enemy_aura'..self.aura,'',Color(self._a,self._r,self._g,self._b))
-		end
-		Render('enemy_aura'..self.aura,self.x,self.y,self.timer*3,1.25+0.15*sin(self.timer*6)) end
-
-	object.render(self)
-
-	if self.style>22 and self.style<=26 then
-		if self._blend then
-			SetImageState('enemy_orb_ring'..self.aura,'mul+add',Color(self._a,self._r,self._g,self._b))
-		end
-		Render('enemy_orb_ring'..self.aura,self.x,self.y,-self.timer*6)
-		Render('enemy_orb_ring'..self.aura,self.x,self.y,self.timer*4,1.4)
-	end
-	if self.style>27 and self.style<=30 then
-		if self._blend then
-			SetImageState('Ghost'..(self.style-26)..int((self.timer/4)%8)+1,'',Color(self._a,self._r,self._g,self._b))
-		end
-		Render('Ghost'..(self.style-26)..int((self.timer/4)%8)+1,self.x,self.y,90)
-	end
-	if self.style>30 then
-		if self._blend then
-			SetImageState('Ghost'..(self.style-30)..int((self.timer/4)%8)+1,'',Color(self._a,self._r,self._g,self._b))
-		end
-		Render('Ghost'..(self.style-30)..int((self.timer/4)%8)+1,self.x,self.y,90)
-	end
-	if self._blend then
-		SetImgState(self,'mul+add',255,255,255,255)
-	end
-	]=]
 end
 
 function enemy:take_damage(dmg)
@@ -219,15 +137,16 @@ function enemy:take_damage(dmg)
 	end
 end
 
+--~细节：现在小怪清理子弹改为以小怪为中心
 function enemy:kill()
 	New(enemy_death_ef,self.death_ef,self.x,self.y)
 	if self.drop then item.DropItem(self.x,self.y,self.drop) end
 	
-	if self.clear_bullet then 
-		for _,p in pairs(Players(self)) do 
-			New(bullet_killer,p.x,p.y,false)
-		end
-	--	New(bullet_killer,lstg.player.x,lstg.player.y,false) 
+	if self.clear_bullet then
+		--for _,p in pairs(Players(self)) do
+			--New(bullet_killer,p.x,p.y,false)
+		--end
+		New(bullet_killer,self.x,self.y,false)
 	end
 	_kill_servants(self)
 end
@@ -255,7 +174,7 @@ function enemy_death_ef:frame()
 	if self.timer==30 then Kill(self) end
 end
 
-Include'THlib\\enemy\\boss.lua'
+--Include'THlib\\enemy\\boss.lua'
 
 EnemySimple=Class(enemy)
 

@@ -7,18 +7,13 @@ function temple_background:init()
 	LoadImageFromFile('temple_road','THlib\\background\\temple\\road.png')
 	LoadImageFromFile('temple_ground','THlib\\background\\temple\\ground.png')
 	LoadImageFromFile('temple_pillar','THlib\\background\\temple\\pillar.png')
-	LoadModel('test','THlib\\background\\temple\\1.obj')
-	LoadImageFromFile('reimut.bmp','THlib\\background\\temple\\reimut.bmp')
 	--set 3d camera and fog
-	Set3D('eye',0,2.5,-4)
-	--Set3D('eye',0,20,20)
-	Set3D('at',0,0,0)
+	Set3D('eye',0,2,-4)
+	Set3D('at',0,0,-0.3)
 	Set3D('up',0,1,0)
 	Set3D('z',1,10)
-	--Set3D('z',1,100)
 	Set3D('fovy',0.6)
 	Set3D('fog',5,10,Color(0xFFFFFFFF))
-	--Set3D('fog',100,1000,Color(0xFFFFFFFF))
 	--
 	self.speed=0.02
 	self.z=0
@@ -37,16 +32,21 @@ function temple_background:render()
     end
 
 
-	for j=0,4 do
+	for j=-1,5,1 do
 		local dz=j*2-math.mod(self.z,2)
 		Render4V('temple_ground', 0.5,0,dz, 2.5,0,dz, 2.5,0,-2+dz, 0.5,0,-2+dz)
 		Render4V('temple_ground',-0.5,0,dz,-2.5,0,dz,-2.5,0,-2+dz,-0.5,0,-2+dz)
 		Render4V('temple_road',-1,0,dz,1,0,dz,1,0,-2+dz,-1,0,-2+dz)
+		
+		Render4V('temple_ground', 4.5,0,dz, 2.5,0,dz, 2.5,0,-2+dz, 4.5,0,-2+dz)
+		Render4V('temple_ground',-4.5,0,dz,-2.5,0,dz,-2.5,0,-2+dz,-4.5,0,-2+dz)
 	end
 	for j=3,-1,-1 do
 		local dz=j*2-math.mod(self.z,2)
 		temple_background.draw_pillar( 0.85,dz+0.2,1.8,0,0.15)
+		temple_background.draw_pillar( 3*0.85,dz+0.2,1.8,0,0.15)
 		temple_background.draw_pillar(-0.85,dz+0.2,1.8,0,0.15)
+		temple_background.draw_pillar(-3*0.85,dz+0.2,1.8,0,0.15)
 	end
 
 

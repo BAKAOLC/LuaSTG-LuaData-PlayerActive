@@ -347,6 +347,19 @@ function rendercircle(x,y,r,point)--player death effect
 	end
 end
 
+function rendercircle2(x,y,r,point,blend,color)--player death effect
+	local ang=360/(2*point)
+	SetImageState('white',blend,color)
+	for angle=360/point,360,360/point do
+		local x1,y1=x+r*cos(angle+ang),y+r*sin(angle+ang)
+		local x2,y2=x+r*cos(angle-ang),y+r*sin(angle-ang)
+		Render4V('white',x,y,0.5,
+		x,y,0.5,
+		x1,y1,0.5,
+		x2,y2,0.5)
+	end
+end
+
 ----------------------------------------
 --资源加载
 

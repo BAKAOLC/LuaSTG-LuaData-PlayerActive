@@ -49,7 +49,7 @@ stage.group.DefStageFunc('SC Debugger@SC Debugger','init',function(self)
 			if _editor_class[_boss_class_name]._bg ~= nil then
 				New(_editor_class[_boss_class_name]._bg)
 			else
-				New(bamboo_background)
+				New(temple_background)
 			end
 		end
 		task._Wait(60)

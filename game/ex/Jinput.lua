@@ -34,6 +34,7 @@ function jstg.CreatePlayers()
 	jstg.enable_player=true
 	
 	local last=New(_G[lstg.var.player_name],1)
+	last._keyslot=1--by ETC
 	last.keyslot=1--by ETC
 	jstg.players={last}
 	jstg.CreateInput(1)
@@ -53,6 +54,7 @@ function jstg.CreatePlayers()
 		last.keypre=jstg.keypres[1]
 		
 		last=New(_G[lstg.var.player_name2],2)
+		last._keyslot=2--by ETC
 		last.keyslot=2--by ETC
 		last.key=jstg.keys[2]
 		last.keypre=jstg.keypres[2]
@@ -70,6 +72,7 @@ function jstg.Compatible()--for old mod
 	jstg.UpdateWorld()
 	if last then
 		last.keyslot=1--by ETC
+		last._keyslot=1--by ETC
 		last.key=jstg.keys[1]
 		last.keypre=jstg.keypres[1]
 	end
@@ -81,6 +84,7 @@ function jstg.Compatible()--for old mod
 		last.keypre=jstg.keypres[1]
 		last=New(_G[lstg.var.player_name2],2)
 		last.keyslot=2--by ETC
+		last._keyslot=2--by ETC
 		last.key=jstg.keys[2]
 		last.keypre=jstg.keypres[2]
 		last.world=4

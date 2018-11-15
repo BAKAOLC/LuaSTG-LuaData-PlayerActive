@@ -207,7 +207,6 @@ default_setting=
 		menu=KEY.ESCAPE,
 		snapshot=KEY.HOME,
 		retry=KEY.R,
-		renderdebug=KEY.F6,
 	},
 }
 
@@ -290,7 +289,9 @@ end
 if setting.mod~='launcher' then
 	LoadPack('mod\\'..setting.mod..'.zip')--正常加载mod
 elseif lfs.attributes('launcher.lua')==nil then
-	LoadPack('mod\\'..setting.mod..'.zip')--正常加载启动器
+	if not(lfs.attributes('mod\\'..setting.mod..'.zip')==nil) then
+		LoadPack('mod\\'..setting.mod..'.zip')--正常加载启动器
+	end
 else
 	--什么也不做
 end

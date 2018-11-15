@@ -5,14 +5,6 @@
 ----------------------------------------
 --加载资源
 
-LoadTexture('boss_ui','THlib\\UI\\boss_ui.png')
-LoadImage('boss_spell_name_bg','boss_ui',0,0,256,36)
-SetImageCenter('boss_spell_name_bg',256,0)
-LoadImage('boss_pointer','boss_ui',0,64,48,16)
-SetImageCenter('boss_pointer',24,0)
-LoadImage('boss_sc_left','boss_ui',64,64,32,32)
-SetImageState('boss_sc_left','',Color(0xFF80FF80))
-
 LoadTexture('hint','THlib\\ui\\hint.png',true)
 LoadImage('hint.bonusfail','hint',0,64,256,64)
 LoadImage('hint.getbonus','hint',0,128,396,64)

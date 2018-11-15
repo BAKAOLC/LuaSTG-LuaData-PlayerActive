@@ -11,14 +11,14 @@ LoadImageFromFile('player_spell_mask','THlib\\player\\spellmask.png')
 
 --自机活使用
 LoadTexture('pa_magicline','THlib\\player\\playermagicline.png',false)
-LoadImageGroup('pa_collect_circleline','pa_magicline',256,0,64,32,1,16)
+LoadImageGroup('pa_collect_circleline','pa_magicline',0,0,64,32,1,16)
 
 ----------------------------------------
 --player class
 
 player_class=Class(object)
 
-function player_class:init(slot)
+function player_class:init()
 	if not lstg.var.init_player_data then error('Player data has not been initialized. (Call function item.PlayerInit.)') end
 	
 	self.layer=LAYER_PLAYER
@@ -72,21 +72,21 @@ function player_class:init(slot)
 	
 	--ex+坑爹输入系统
 	--存下按键状态
-	self._temp_key=nil
-	self._temp_keyp=nil
+	--self._temp_key=nil
+	--self._temp_keyp=nil
 	--输入槽位
-	if slot then self.keyslot=slot end
-	self._keyslot=self.keyslot--私密变量
+	self._keyslot=1--私密变量
+	self.keyslot=1
 	
 	self._wisys = PlayerWalkImageSystem(self)--by OLC，自机行走图系统
 end
 
 function player_class:frame()
-	player_class.keystart(self)
+	--player_class.keystart(self)
 	
 	player_class.framefunc(self)
 	
-	player_class.keyend(self)
+	--player_class.keyend(self)
 end
 
 function player_class:oldframefunc()
@@ -248,7 +248,7 @@ function player_class:oldframefunc()
 	RunSystem("on_player_frame",self)
 end
 
-function player_class:framefunc()--自机活使用
+function player_class:oldframefunca()--自机活使用
 	self.grazer.world=self.world
 	--find target
 	if ((not IsValid(self.target)) or (not self.target.colli)) then player_class.findtarget(self) end
@@ -411,20 +411,187 @@ function player_class:framefunc()--自机活使用
 	if self.time_stop then self.timer=self.timer-1 end
 end
 
-function player_class:keystart()
+function player_class:framefunc()--自机活使用
+	self.grazer.world=self.world
+	--find target
+	if ((not IsValid(self.target)) or (not self.target.colli)) then player_class.findtarget(self) end
+	if not KeyIsDown('shoot',self._keyslot) then self.target=nil end
+	--
+	local dx=0
+	local dy=0
+	local v=self.hspeed
+	if (self.death==0 or self.death>90) and (not self.lock) and not(self.time_stop) then
+		--slow
+		if KeyIsDown('slow',self._keyslot) then
+			self.slow=1
+		else
+			self.slow=0
+		end
+		--shoot and spell
+		if not self.dialog then
+			if KeyIsDown('shoot',self._keyslot) and self.nextshoot<=0 then
+				self.class.shoot(self)
+			end
+			if KeyIsDown('spell',self._keyslot) and self.nextspell<=0 and not lstg.var.block_spell and item.PlayerCanPsy(self) then
+				item.PlayerPsy(self)--item.PlayerSpell()
+				self.class.spell(self)
+				self.death=0
+				self.nextcollect=90--???
+				self._breaktimes=0--连续miss次数
+			end
+		else
+			self.nextshoot=15
+			self.nextspell=30
+		end
+		--move
+		if self.death==0 and not self.lock then
+		if self.slowlock then self.slow=1 end
+		if self.slow==1 then v=self.lspeed end
+		if KeyIsDown('up',self._keyslot) then dy=dy+1 end
+		if KeyIsDown('down',self._keyslot) then dy=dy-1 end
+		if KeyIsDown('left',self._keyslot) then dx=dx-1 end
+		if KeyIsDown('right',self._keyslot) then dx=dx+1 end
+		if dx*dy~=0 then v=v*SQRT2_2 end
+		self.x=self.x+v*dx
+		self.y=self.y+v*dy
+		
+		for i=1,#jstg.worlds do
+			if IsInWorld(self.world,jstg.worlds[i].world) then
+				self.x=math.max(math.min(self.x,jstg.worlds[i].pr-8),jstg.worlds[i].pl+8)
+				self.y=math.max(math.min(self.y,jstg.worlds[i].pt-32),jstg.worlds[i].pb+16)
+			end
+		end
+		
+		end
+		--fire
+		if KeyIsDown('shoot',self._keyslot) and not self.dialog then self.fire=self.fire+0.16 else self.fire=self.fire-0.16 end
+		if self.fire<0 then self.fire=0 end
+		if self.fire>1 then self.fire=1 end
+		--item
+		if self.y>self.collect_line then
+			for i,o in ObjList(GROUP_ITEM) do
+				local flag=false
+				if o.attract<8 then
+					flag=true
+				elseif o.attract==8 and o.target~=self then
+					if (not o.target) or o.target.y<self.y then
+						flag=true
+					end
+				end
+				if flag then
+					o.attract=8
+					o.num=self.item
+					o.target=self
+				end
+			end
+		else
+			for i,o in ObjList(GROUP_ITEM) do
+				if Dist(self,o)<self._collectR then
+					if o.attract<6 then
+						o.attract=max(o.attract,6)
+						o.target=self
+					end
+				end
+			end
+		end
+	elseif self.death==90 then
+		if self.time_stop then self.death=self.death-1 end
+		item.PlayerBreak(self)
+		self._breaktimes=min(self._breaktimes+1,3)--连续miss次数
+		New(player_death_ef,self.x,self.y)
+		self.deathee={}
+		self.deathee[1]=New(deatheff,self.x,self.y,'first')
+		self.deathee[2]=New(deatheff,self.x,self.y,'second')
+	elseif self.death==84 then
+		if self.time_stop then self.death=self.death-1 end
+		self.hide=true
+		self.support=int(lstg.var.power/100)
+	elseif self.death==50 then
+		if self.time_stop then self.death=self.death-1 end
+		self.x=0
+		self.supportx=0
+		self.y=-236
+		self.supporty=-236
+		self.hide=false
+		New(bullet_deleter,self.x,self.y)
+	elseif self.death<50 and not(self.lock) and not(self.time_stop) then
+		self.y=-176-1.2*self.death
+	end
+	--img
+	---加上time_stop的限制来实现图像时停
+	if not(self.time_stop) then
+		self._wisys:frame(dx)--by OLC，自机行走图系统
+		
+		self.lh=self.lh+(self.slow-0.5)*0.3
+		if self.lh<0 then self.lh=0 end
+		if self.lh>1 then self.lh=1 end
+		
+		if self.nextshoot>0 then self.nextshoot=self.nextshoot-1 end
+		if self.nextspell>0 then self.nextspell=self.nextspell-1 end
+		
+		if self.support>int(lstg.var.power/100) then self.support=self.support-0.0625
+		elseif self.support<int(lstg.var.power/100) then self.support=self.support+0.0625 end
+		if abs(self.support-int(lstg.var.power/100))<0.0625 then self.support=int(lstg.var.power/100) end
+		
+		self.supportx=self.x+(self.supportx-self.x)*0.6875
+		self.supporty=self.y+(self.supporty-self.y)*0.6875
+		
+		if self.protect>0 then self.protect=self.protect-1 end
+		if self.death>0 then self.death=self.death-1 end
+		
+		--update supports
+		if self.slist then
+			self.sp={}
+			if self.support==5 then
+				for i=1,4 do self.sp[i]=MixTable(self.lh,self.slist[6][i]) self.sp[i][3]=1 end
+			else
+				local s=int(self.support)+1
+				local t=self.support-int(self.support)
+				for i=1,4 do
+					if self.slist[s][i] and self.slist[s+1][i] then
+						self.sp[i]=MixTable(t,MixTable(self.lh,self.slist[s][i]),MixTable(self.lh,self.slist[s+1][i]))
+						self.sp[i][3]=1
+					elseif self.slist[s+1][i] then
+						self.sp[i]=MixTable(self.lh,self.slist[s+1][i])
+						self.sp[i][3]=t
+					end
+				end
+			end
+		end
+		
+		--collectR
+		self._lh2=self._lh2+(self.slow-0.5)*0.1
+		if self._lh2<0 then self._lh2=0 end
+		if self._lh2>1 then self._lh2=1 end
+		local k=sin(self._lh2*90)
+		self._collectRA=max(0,min(k,1))
+		self._collectR=k*self.collectR2+(1-k)*self.collectR1
+		
+		--pointrate
+		lstg.var.pointrates[GetCurrentPlayerSlot(self)]=item.PointRateFunc(lstg.var,self)
+	end
+	--time_stop
+	if self.time_stop then self.timer=self.timer-1 end
+end
+
+function player_class:keystart()--不再起作用
+	--[=[
 	if self.key then
 		self._temp_key=KeyState
 		self._temp_keyp=KeyStatePre
 		KeyState=self.key
 		KeyStatePre=self.keypre
 	end
+	--]=]
 end
 
-function player_class:keyend()
+function player_class:keyend()--不再起作用
+	--[=[
 	if self.key then
 		KeyState=self._temp_key
 		KeyStatePre=self._temp_keyp
 	end
+	--]=]
 end
 
 function player_class:render()
@@ -458,6 +625,24 @@ function player_class:colli(other)--自机活使用
 			self.death=90+self.checkF--可以设置决死时间
 		end
 		if other.group==GROUP_ENEMY_BULLET then Del(other) end
+	end
+end
+
+function player_class:kill()
+	PreserveObject(self)
+	if self.protect<=0 and self.death==0 and (not self.dialog) and (not cheat) then
+		PlaySound('pldead00',0.5)
+		item.PlayerStruck(self)
+		self.death=90+self.checkF--可以设置决死时间
+	end
+end
+
+function player_class:del()
+	PreserveObject(self)
+	if self.protect<=0 and self.death==0 and (not self.dialog) and (not cheat) then
+		PlaySound('pldead00',0.5)
+		item.PlayerStruck(self)
+		self.death=90
 	end
 end
 
@@ -567,6 +752,22 @@ function GetCurrentPlayerSlot(p)--获得传入的玩家的槽位，返回整数1
 	else
 		Print('Warning:jstg.players is non-existent.')
 		return 0--异常情况，在ex+中，jstg.players一定存在，如果执行到这里说明jstg.players炸了
+	end
+end
+
+function ResetPlayerMissTimer(p)--重设自机连续死亡次数计数器
+	if IsValid(p) then
+		p._breaktimes=0
+	else
+		if jstg.players then
+			for i=1,#jstg.players do
+				if IsValid(jstg.players[i]) then
+					jstg.players[i]._breaktimes=0
+				end
+			end
+		else
+			player._breaktimes=0
+		end
 	end
 end
 

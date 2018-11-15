@@ -1,3 +1,10 @@
+--======================================
+--luastg stage background
+--======================================
+
+----------------------------------------
+--background
+
 background=Class(object)
 
 function background:init(is_sc_bg)
@@ -17,6 +24,20 @@ function background:render()
 	SetViewMode'world'
 	RenderClear(Color(0x00000000))
 end
+
+----------------------------------------
+--资源加载
+
+LoadFX('boss_distortion', 'shader\\boss_distortion.fx')
+Include'THlib\\background\\temple\\temple.lua'
+Include'THlib\\background\\spellcard\\spellcard.lua'
+if FileExist('background.zip') then--额外背景包
+	LoadPack('background.zip')
+	Include'THlib\\background\\backgroundadd.lua'
+end
+
+----------------------------------------
+--辅助工具
 
 camera_setter=Class(object)
 
@@ -151,33 +172,3 @@ function camera_setter:render()
 	end
 	SetViewMode'world'
 end
-LoadFX('boss_distortion', 'shader\\boss_distortion.fx')
-Include'THlib\\background\\ball\\ball.lua'
-Include'THlib\\background\\bamboo\\bamboo.lua'
-Include'THlib\\background\\bamboo2\\bamboo2.lua'
-Include'THlib\\background\\magic_forest\\magic_forest.lua'
-Include'THlib\\background\\temple\\temple.lua'
-Include'THlib\\background\\temple2\\temple2.lua'
-Include'THlib\\background\\temple3\\temple3.lua'
-Include'THlib\\background\\spellcard\\spellcard.lua'
-Include'THlib\\background\\magic_forest_fast\\magic_forest_fast.lua'
-Include'THlib\\background\\skyandcloud\\skyandcloud.lua'
-Include'THlib\\background\\redsky\\redsky.lua'
-Include'THlib\\background\\temple_menu\\menu_temple.lua'
-Include'THlib\\background\\picture\\picture.lua'
-Include'THlib\\background\\starlight\\starlight.lua'
-Include'THlib\\background\\river\\river.lua'
-Include'THlib\\background\\gensokyosora\\gensokyosora.lua'
-Include'THlib\\background\\icepool\\icepool.lua'
-Include'THlib\\background\\hongmoguanB\\hongmoguanB.lua'
-Include'THlib\\background\\lake\\lake.lua'
-Include'THlib\\background\\stage3bg\\stage3bg.lua'
-Include'THlib\\background\\stage4bg\\stage4bg.lua'
-Include'THlib\\background\\cube\\cube.lua'
-Include'THlib\\background\\gzz_stage04bg\\gzz_stage04bg.lua'
-Include'THlib\\background\\gzz_stg6bg\\gzz_stg6bg.lua'
-Include'THlib\\background\\world\\world.lua'
-Include'THlib\\background\\woods\\woods.lua'
-Include'THlib\\background\\le03_5\\le03_5.lua'
-Include'THlib\\background\\galaxy\\galaxy.lua'
-Include'THlib\\background\\tkz_stage3\\stage3bg.lua'
